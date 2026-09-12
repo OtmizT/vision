@@ -309,6 +309,9 @@ func (r *nullSyncRepo) GetJobsOverview(_ context.Context) ([]syncsvc.JobStatusCo
 func (r *nullSyncRepo) GetJobsAtivos(_ context.Context) ([]syncsvc.JobAtivoRow, error) {
 	return nil, nil
 }
+func (r *nullSyncRepo) ListEmpresasSyncGeral(_ context.Context) ([]syncsvc.EmpresaSyncRow, error) {
+	return nil, nil
+}
 func (r *nullSyncRepo) CancelarJob(_ context.Context, _ string) error                { return nil }
 func (r *nullSyncRepo) InsertJobPage(_ context.Context, _, _ string, _, _ int) error { return nil }
 func (r *nullSyncRepo) GetPendingPages(_ context.Context, _ string, _ int) ([]syncsvc.JobPage, error) {

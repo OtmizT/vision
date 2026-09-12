@@ -81,10 +81,13 @@ func (m *mockRepo) GetJobAtivo(_ context.Context, _ string) (*JobAtivoResult, er
 	}
 	return nil, nil
 }
-func (m *mockRepo) MarkStaleJobs(_ context.Context) (int64, error)               { return 0, nil }
-func (m *mockRepo) UpdateJobHeartbeat(_ context.Context, _ string) error         { return nil }
-func (m *mockRepo) GetJobsOverview(_ context.Context) ([]JobStatusCount, error)  { return nil, nil }
-func (m *mockRepo) GetJobsAtivos(_ context.Context) ([]JobAtivoRow, error)       { return nil, nil }
+func (m *mockRepo) MarkStaleJobs(_ context.Context) (int64, error)              { return 0, nil }
+func (m *mockRepo) UpdateJobHeartbeat(_ context.Context, _ string) error        { return nil }
+func (m *mockRepo) GetJobsOverview(_ context.Context) ([]JobStatusCount, error) { return nil, nil }
+func (m *mockRepo) GetJobsAtivos(_ context.Context) ([]JobAtivoRow, error)      { return nil, nil }
+func (m *mockRepo) ListEmpresasSyncGeral(_ context.Context) ([]EmpresaSyncRow, error) {
+	return nil, nil
+}
 func (m *mockRepo) CancelarJob(_ context.Context, _ string) error                { return nil }
 func (m *mockRepo) InsertJobPage(_ context.Context, _, _ string, _, _ int) error { return nil }
 func (m *mockRepo) GetPendingPages(_ context.Context, _ string, _ int) ([]JobPage, error) {

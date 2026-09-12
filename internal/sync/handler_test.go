@@ -59,9 +59,12 @@ func (m *mockSvc) UpdateExecutorConfig(_ context.Context, _, _ string, _ UpdateE
 func (m *mockSvc) StartupRecovery(_ context.Context) error                      { return nil }
 func (m *mockSvc) GetAdminOverview(_ context.Context) (map[string]int64, error) { return nil, nil }
 func (m *mockSvc) GetJobsAtivos(_ context.Context) ([]JobAtivoRow, error)       { return nil, nil }
-func (m *mockSvc) CancelarJob(_ context.Context, _ string) error                { return nil }
-func (m *mockSvc) GetDLQPages(_ context.Context) ([]DLQPageRow, error)          { return nil, nil }
-func (m *mockSvc) RetryDLQPage(_ context.Context, _ string) error               { return nil }
+func (m *mockSvc) ListEmpresasSyncGeral(_ context.Context) ([]EmpresaSyncRow, error) {
+	return nil, nil
+}
+func (m *mockSvc) CancelarJob(_ context.Context, _ string) error       { return nil }
+func (m *mockSvc) GetDLQPages(_ context.Context) ([]DLQPageRow, error) { return nil, nil }
+func (m *mockSvc) RetryDLQPage(_ context.Context, _ string) error      { return nil }
 func (m *mockSvc) GetPagesByEmpresa(_ context.Context, _, _ string) ([]PageRow, error) {
 	return nil, nil
 }

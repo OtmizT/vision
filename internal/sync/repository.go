@@ -37,6 +37,7 @@ type Repository interface {
 
 	GetJobsOverview(ctx context.Context) ([]JobStatusCount, error)
 	GetJobsAtivos(ctx context.Context) ([]JobAtivoRow, error)
+	ListEmpresasSyncGeral(ctx context.Context) ([]EmpresaSyncRow, error)
 	CancelarJob(ctx context.Context, jobID string) error
 
 	InsertJobPage(ctx context.Context, jobID, modulo string, pagina, totalPaginas int) error
@@ -335,6 +336,72 @@ func (r *repository) GetJobsAtivos(ctx context.Context) ([]JobAtivoRow, error) {
 		}
 	}
 	return result, nil
+}
+
+/*
+ListEmpresasSyncGeral devolve todas as empresas de todos os grupos com o estado
+de sincronizacao.
+
+O heartbeat nao vai para a struct de saida: ele so serve para decidir se o job
+esta zumbi, e essa decisao e tomada aqui uma vez, em vez de repetir a regra dos
+10 minutos na tela. Ver PrazoHeartbeat.
+*/
+func (r *repository) ListEmpresasSyncGeral(ctx context.Context) ([]EmpresaSyncRow, error) {
+	q := sqlcgen.New(r.pool)
+	rows, err := q.ListEmpresasSyncGeral(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("syncRepository.ListEmpresasSyncGeral: %w", err)
+	}
+
+	agora := time.Now()
+	out := make([]EmpresaSyncRow, len(rows))
+	for i, row := range rows {
+		e := EmpresaSyncRow{
+			GrupoID:                 uuidToStr(row.GrupoID),
+			GrupoNome:               row.GrupoNome,
+			EmpresaID:               uuidToStr(row.EmpresaID),
+			EmpresaNome:             row.EmpresaNome,
+			Status:                  row.EmpresaStatus,
+			StatusSync:              row.EmpresaStatusSync,
+			SyncAtivo:               row.SyncAtivo,
+			IntervaloIncrementalMin: row.IntervaloIncrementalMin,
+			IntervaloFullDias:       row.IntervaloFullDias,
+			JobID:                   uuidToStr(row.JobID),
+			JobTipo:                 row.JobTipo,
+			JobStatus:               row.JobStatus,
+			JobRegistros:            row.JobRegistros,
+		}
+
+		e.UltimoSyncAt = tsPtr(row.UltimoSyncAt)
+		e.ProximoSyncAt = tsPtr(row.ProximoSyncAt)
+		e.UltimoFullSyncAt = tsPtr(row.UltimoFullSyncAt)
+		e.ProximoFullSyncAt = tsPtr(row.ProximoFullSyncAt)
+		e.JobIniciadoAt = tsPtr(row.JobIniciadoAt)
+		e.JobConcluidoAt = tsPtr(row.JobConcluidoAt)
+
+		if row.JobErro.Valid && row.JobErro.String != "" {
+			msg := row.JobErro.String
+			e.JobErro = &msg
+		}
+
+		e.JobZumbi = row.JobStatus == "rodando" &&
+			row.JobHeartbeatAt.Valid &&
+			agora.Sub(row.JobHeartbeatAt.Time) > PrazoHeartbeat
+
+		out[i] = e
+	}
+	return out, nil
+}
+
+// tsPtr converte um timestamp anulavel do pgx em ponteiro, que e como o JSON
+// distingue "sem valor" de "epoch". Repetido a mao em varios lugares deste
+// arquivo antes desta funcao existir.
+func tsPtr(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+	v := t.Time
+	return &v
 }
 
 func (r *repository) CancelarJob(ctx context.Context, jobID string) error {

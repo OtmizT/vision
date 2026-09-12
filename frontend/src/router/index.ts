@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { rotaInicial } from '@/utils/navegacao'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -24,11 +25,14 @@ const router = createRouter({
       component: () => import('@/components/layout/MainLayout.vue'),
       meta: { requiresAuth: true },
       children: [
-        // Dashboard (Fase 2 — placeholder por ora)
+        // Dashboard: a tela principal do produto. Fica de fora do admin
+        // global, que administra a plataforma e nao le dados de grupo.
+        // Sem esta restricao o item sumia do menu e a URL seguia aberta.
         {
           path: '',
           name: 'Dashboard',
-          component: () => import('@/views/DashboardView.vue')
+          component: () => import('@/views/DashboardView.vue'),
+          meta: { roles: ['admin_grupo', 'viewer'] }
         },
 
         // Grupos — admin_global apenas
@@ -140,7 +144,9 @@ router.beforeEach(async to => {
   // Rota pública
   if (to.meta.public) {
     if (auth.needsGroupSelect) return { name: 'SelectGrupo' }
-    if (auth.isAuthenticated)  return { name: 'Dashboard' }
+    // Quem ja esta autenticado vai para a tela do proprio papel — nem todo
+    // mundo tem Dashboard. Ver utils/navegacao.ts.
+    if (auth.isAuthenticated)  return rotaInicial(auth.user?.role)
     return true
   }
 

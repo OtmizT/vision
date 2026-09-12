@@ -105,6 +105,7 @@ func NewRouter(deps Dependencies) http.Handler {
 		r.Use(auth.RequireAuth(deps.AuthHandler.JWTService())) // JWTService() helper might be needed or access jwtSvc directly
 		r.Use(auth.RequireRole("admin_global"))
 		r.Get("/admin/sync/overview", deps.SyncHandler.AdminOverview)
+		r.Get("/admin/sync/empresas", deps.SyncHandler.AdminEmpresasSync)
 		r.Get("/admin/sync/jobs/ativos", deps.SyncHandler.AdminJobsAtivos)
 		r.Get("/admin/sync/dlq", deps.SyncHandler.AdminDLQ)
 		r.Post("/admin/sync/pages/{pageID}/retry", deps.SyncHandler.AdminRetryPage)

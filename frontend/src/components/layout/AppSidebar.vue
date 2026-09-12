@@ -75,6 +75,7 @@ import {
   IconGrid, IconBuilding, IconFactory,
   IconUsers, IconKey, IconSync, IconUser, IconDatabase
 } from '@/components/ui/icons'
+import { temDashboard } from '@/utils/navegacao'
 
 const IconSwitch = {
   template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>`
@@ -114,10 +115,15 @@ const navSections = computed(() => {
   const role = auth.user?.role
   const sections: Array<{ label: string; items: Array<{ to: string; label: string; icon: unknown }> }> = []
 
-  sections.push({
-    label: 'PRINCIPAL',
-    items: [{ to: '/', label: 'Dashboard', icon: IconGrid }]
-  })
+  // O admin global nao tem Dashboard: ele administra a plataforma e nao consome
+  // os dados financeiros de nenhum grupo. Ver utils/navegacao.ts — a mesma
+  // funcao decide o item do menu e a rota inicial, senao os dois divergem.
+  if (temDashboard(role)) {
+    sections.push({
+      label: 'PRINCIPAL',
+      items: [{ to: '/', label: 'Dashboard', icon: IconGrid }]
+    })
+  }
 
   const adminItems: Array<{ to: string; label: string; icon: unknown }> = []
   if (role === 'admin_global') {

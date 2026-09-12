@@ -66,6 +66,9 @@ func (m *mockSyncRepo) GetJobsOverview(_ context.Context) ([]syncsvc.JobStatusCo
 func (m *mockSyncRepo) GetJobsAtivos(_ context.Context) ([]syncsvc.JobAtivoRow, error) {
 	return nil, nil
 }
+func (m *mockSyncRepo) ListEmpresasSyncGeral(_ context.Context) ([]syncsvc.EmpresaSyncRow, error) {
+	return nil, nil
+}
 func (m *mockSyncRepo) CancelarJob(_ context.Context, _ string) error                { return nil }
 func (m *mockSyncRepo) InsertJobPage(_ context.Context, _, _ string, _, _ int) error { return nil }
 func (m *mockSyncRepo) GetPendingPages(_ context.Context, _ string, _ int) ([]syncsvc.JobPage, error) {

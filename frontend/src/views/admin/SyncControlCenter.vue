@@ -2,6 +2,12 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import api from '@/api/client'
+import { syncAdminApi, type EmpresaSync } from '@/api/sync'
+// fmtDuracao vem com apelido: a aba de manutencao ja tem uma funcao com esse
+// nome, para as consultas ativas, e o formato dela e outro ("45min 12s").
+import {
+  duracaoJob, fmtDuracao as fmtDuracaoJob, situacao, pesoSituacao, type SituacaoSync,
+} from '@/utils/sync'
 
 interface JobAtivoAdmin {
   id: string
@@ -33,6 +39,82 @@ interface DLQPage {
 }
 
 const auth = useAuthStore()
+
+// ── Abas ───────────────────────────────────────────────────────────────────
+const abas = [
+  { id: 'empresas', rotulo: 'Empresas' },
+  { id: 'jobs',     rotulo: 'Jobs ativos' },
+  { id: 'erros',    rotulo: 'Erros' },
+  { id: 'banco',    rotulo: 'Banco' },
+] as const
+const aba = ref<(typeof abas)[number]['id']>('empresas')
+
+// ── Empresas: todas, de todos os grupos ────────────────────────────────────
+const empresas = ref<EmpresaSync[]>([])
+const buscaEmpresa = ref('')
+
+const qtdGrupos = computed(() => new Set(empresas.value.map(e => e.grupo_id)).size)
+
+/**
+ * Ordena pelo que exige ação: travado, erro, rodando, nunca sincronizou,
+ * pausado e por fim o que está em dia. Dentro do mesmo peso, por grupo e
+ * empresa, para a lista não dançar entre atualizações.
+ *
+ * A regra de peso está em utils/sync.ts, testada — ordenar errado aqui
+ * enterraria justamente a empresa com problema no fim de uma lista longa.
+ */
+const empresasFiltradas = computed(() => {
+  const q = buscaEmpresa.value.trim().toLowerCase()
+  const filtradas = q
+    ? empresas.value.filter(e =>
+        e.empresa_nome.toLowerCase().includes(q) || e.grupo_nome.toLowerCase().includes(q))
+    : empresas.value
+
+  return [...filtradas].sort((a, b) => {
+    const d = pesoSituacao(situacao(b)) - pesoSituacao(situacao(a))
+    if (d !== 0) return d
+    return a.grupo_nome.localeCompare(b.grupo_nome) || a.empresa_nome.localeCompare(b.empresa_nome)
+  })
+})
+
+const ROTULOS: Record<SituacaoSync, string> = {
+  travado: 'TRAVADO', erro: 'ERRO', rodando: 'RODANDO',
+  nunca: 'NUNCA RODOU', pausado: 'PAUSADO', ok: 'EM DIA',
+}
+const CLASSES: Record<SituacaoSync, string> = {
+  travado: 'bg-danger-weak text-danger',
+  erro:    'bg-danger-weak text-danger',
+  rodando: 'bg-primary-weak text-primary',
+  nunca:   'bg-surface-2 text-text-dim',
+  pausado: 'bg-warning-weak text-warning',
+  ok:      'bg-success-weak text-success',
+}
+const rotuloSituacao = (e: EmpresaSync) => ROTULOS[situacao(e)]
+const classeSituacao = (e: EmpresaSync) => CLASSES[situacao(e)]
+
+/**
+ * Duração do último job. O "+" marca que ainda está correndo — sem ele, um job
+ * travado há seis horas se lê como um sync que demorou seis horas e terminou.
+ */
+function rotuloDuracao(e: EmpresaSync): string {
+  const d = duracaoJob({ iniciado: e.job_iniciado_at, concluido: e.job_concluido_at })
+  if (d.estado === 'sem_inicio') return '—'
+  return d.estado === 'em_andamento' ? `${fmtDuracaoJob(d)} +` : fmtDuracaoJob(d)
+}
+
+function fmtData(ts: string | null): string {
+  return ts ? new Date(ts).toLocaleString('pt-BR') : '—'
+}
+
+async function fetchEmpresas() {
+  try {
+    const r = await syncAdminApi.empresas()
+    empresas.value = r.data.data
+  } catch (err: any) {
+    console.error('Erro ao buscar empresas:', err)
+  }
+}
+
 const overview = ref<SyncOverview>({})
 const jobsAtivos = ref<JobAtivoAdmin[]>([])
 const dlqPages = ref<DLQPage[]>([])
@@ -48,7 +130,7 @@ const zumbiCount = computed(() => {
 
 async function fetchOverview() {
   try {
-    const r = await api.get('/admin/sync/overview')
+    const r = await syncAdminApi.overview()
     overview.value = r.data.data
   } catch (err: any) {
     console.error('Erro ao buscar overview:', err)
@@ -57,7 +139,7 @@ async function fetchOverview() {
 
 async function fetchJobsAtivos() {
   try {
-    const r = await api.get('/admin/sync/jobs/ativos')
+    const r = await syncAdminApi.jobsAtivos()
     jobsAtivos.value = r.data.data
   } catch (err: any) {
     console.error('Erro ao buscar jobs ativos:', err)
@@ -66,7 +148,7 @@ async function fetchJobsAtivos() {
 
 async function fetchDLQ() {
   try {
-    const r = await api.get('/admin/sync/dlq')
+    const r = await syncAdminApi.dlq()
     dlqPages.value = r.data.data
   } catch (err: any) {
     console.error('Erro ao buscar DLQ:', err)
@@ -78,7 +160,7 @@ async function runRecovery() {
   
   recoveryLoading.value = true
   try {
-    await api.post('/admin/sync/startup-recovery')
+    await syncAdminApi.startupRecovery()
     await Promise.all([fetchOverview(), fetchJobsAtivos()])
   } catch (err: any) {
     alert('Erro ao executar recovery: ' + (err.response?.data?.message || err.message))
@@ -92,7 +174,7 @@ async function cancelarJob(job: JobAtivoAdmin) {
   
   cancelingJobId.value = job.id
   try {
-    await api.post(`/admin/sync/jobs/${job.id}/cancelar`)
+    await syncAdminApi.cancelarJob(job.id)
     await Promise.all([fetchOverview(), fetchJobsAtivos()])
   } catch (err: any) {
     alert('Erro ao cancelar job: ' + (err.response?.data?.message || err.message))
@@ -104,7 +186,7 @@ async function cancelarJob(job: JobAtivoAdmin) {
 async function retryPage(page: DLQPage) {
   retryingPageId.value = page.id
   try {
-    await api.post(`/admin/sync/pages/${page.id}/retry`)
+    await syncAdminApi.retryPagina(page.id)
     await fetchDLQ()
   } catch (err: any) {
     alert('Erro ao agendar retry: ' + (err.response?.data?.message || err.message))
@@ -205,10 +287,13 @@ function fmtDuracao(seg: number): string {
 onMounted(() => {
   fetchConsultas()
   fetchGrupos()
+  fetchEmpresas()
   fetchOverview()
   fetchJobsAtivos()
   fetchDLQ()
-  pollInterval = window.setInterval(fetchJobsAtivos, 30000)
+  // A lista de empresas entra no mesmo ciclo de 30s dos jobs: ela mostra o que
+  // esta rodando agora, e parada ficaria mentindo junto.
+  pollInterval = window.setInterval(() => { fetchJobsAtivos(); fetchEmpresas() }, 30000)
 })
 
 onUnmounted(() => {
@@ -230,7 +315,7 @@ onUnmounted(() => {
           Recovery Manual
         </button>
         <button 
-          @click="() => { fetchOverview(); fetchJobsAtivos(); fetchDLQ(); }" 
+          @click="() => { fetchOverview(); fetchJobsAtivos(); fetchDLQ(); fetchEmpresas(); }" 
           class="px-4 py-2 bg-primary text-oncolor rounded hover:bg-primary-hover"
         >
           Atualizar
@@ -238,6 +323,82 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <!-- Abas. As tres de baixo ja existiam empilhadas; a de Empresas e nova e
+         fica na frente por ser a visao de parque — o que rodou, o que falhou e
+         ha quanto tempo cada empresa nao sincroniza. -->
+    <div class="flex gap-1 border-b border-border mb-6">
+      <button v-for="t in abas" :key="t.id"
+              @click="aba = t.id"
+              :class="['px-4 py-2 text-sm font-medium border-b-2 -mb-px',
+                       aba === t.id
+                         ? 'border-primary text-primary'
+                         : 'border-transparent text-text-dim hover:text-text-main']">
+        {{ t.rotulo }}
+      </button>
+    </div>
+
+    <!-- Empresas: todas, de todos os grupos -->
+    <div v-show="aba === 'empresas'" class="bg-surface rounded-lg shadow mb-8">
+      <div class="p-4 border-b flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h2 class="text-lg font-semibold text-text-main">Empresas</h2>
+          <p class="text-sm text-text-dim">
+            {{ empresas.length }} empresa(s) em {{ qtdGrupos }} grupo(s) ·
+            ordenadas pelo que exige atencao
+          </p>
+        </div>
+        <input v-model="buscaEmpresa" placeholder="Filtrar empresa ou grupo..."
+               class="px-3 py-2 bg-surface-2 border border-border-strong rounded text-sm text-text-main" />
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left">
+          <thead class="bg-surface-2 text-text-muted text-sm uppercase font-medium">
+            <tr>
+              <th class="px-4 py-3">Grupo / Empresa</th>
+              <th class="px-4 py-3">Situacao</th>
+              <th class="px-4 py-3">Ultimo sync</th>
+              <th class="px-4 py-3">Proximo</th>
+              <th class="px-4 py-3">Ultimo full</th>
+              <th class="px-4 py-3">Duracao</th>
+              <th class="px-4 py-3 text-right">Registros</th>
+              <th class="px-4 py-3">Erro</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr v-if="!empresasFiltradas.length">
+              <td colspan="8" class="px-4 py-8 text-center text-text-dim">
+                {{ empresas.length ? 'Nenhuma empresa no filtro.' : 'Nenhuma empresa cadastrada.' }}
+              </td>
+            </tr>
+            <tr v-for="e in empresasFiltradas" :key="e.empresa_id" class="hover:bg-surface-2">
+              <td class="px-4 py-3">
+                <div class="font-medium text-text-main">{{ e.empresa_nome }}</div>
+                <div class="text-sm text-text-dim">{{ e.grupo_nome }}</div>
+              </td>
+              <td class="px-4 py-3">
+                <span :class="['px-2 py-1 rounded text-xs font-semibold', classeSituacao(e)]">
+                  {{ rotuloSituacao(e) }}
+                </span>
+              </td>
+              <td class="px-4 py-3 text-sm text-text-muted">{{ fmtData(e.ultimo_sync_at) }}</td>
+              <td class="px-4 py-3 text-sm text-text-muted">{{ fmtData(e.proximo_sync_at) }}</td>
+              <td class="px-4 py-3 text-sm text-text-muted">{{ fmtData(e.ultimo_full_sync_at) }}</td>
+              <!-- Job em andamento mostra o tempo decorrido, nao o total: o
+                   "+" evita ler 6h como duracao final de algo que travou. -->
+              <td class="px-4 py-3 text-sm text-text-muted">{{ rotuloDuracao(e) }}</td>
+              <td class="px-4 py-3 text-sm text-text-muted text-right">
+                {{ e.job_registros ? e.job_registros.toLocaleString('pt-BR') : '—' }}
+              </td>
+              <td class="px-4 py-3 text-sm text-danger max-w-md truncate" :title="e.job_erro || ''">
+                {{ e.job_erro || '' }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div v-show="aba === 'jobs'">
     <!-- Cards de Resumo -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
       <div class="bg-surface p-4 rounded-lg shadow border-l-4 border-primary">
@@ -321,6 +482,8 @@ onUnmounted(() => {
       </div>
     </div>
 
+    </div>
+    <div v-show="aba === 'erros'">
     <!-- Dead Letter Queue -->
     <div class="bg-surface rounded-lg shadow">
       <div class="p-4 border-b">
@@ -378,6 +541,8 @@ onUnmounted(() => {
       </div>
     </div>
 
+    </div>
+    <div v-show="aba === 'banco'">
     <!-- Manutenção operacional de banco -->
     <div class="bg-surface rounded-lg shadow mt-6">
       <div class="px-6 py-4 border-b flex items-center justify-between flex-wrap gap-3">
@@ -459,6 +624,7 @@ onUnmounted(() => {
           </tbody>
         </table>
       </div>
+    </div>
     </div>
   </div>
 </template>

@@ -180,6 +180,66 @@ WHERE j.status IN ('rodando', 'pendente')
   AND j.concluido_at IS NULL
 ORDER BY j.iniciado_at ASC;
 
+-- name: ListEmpresasSyncGeral :many
+--
+-- Todas as empresas de todos os grupos, com o estado de sincronizacao de cada
+-- uma. E a unica consulta do sistema que lista empresas sem filtrar por grupo —
+-- as demais partem de um grupo_id, o que obrigava a tela a fazer uma chamada
+-- por grupo.
+--
+-- O ultimo job vem por LATERAL, e nao por JOIN + DISTINCT ON: com LATERAL o
+-- Postgres usa o indice (empresa_id, created_at DESC) uma vez por empresa, em
+-- vez de ordenar a tabela de jobs inteira.
+--
+-- Duracao NAO e um campo armazenado: o worker calcula e so escreve no log. Sai
+-- daqui como diferenca de timestamps, o que significa que job em andamento tem
+-- duracao parcial e job travado tem duracao enorme. A tela rotula isso.
+SELECT
+    g.id                                   AS grupo_id,
+    g.nome                                 AS grupo_nome,
+    e.id                                   AS empresa_id,
+    e.nome                                 AS empresa_nome,
+    e.status                               AS empresa_status,
+    e.status_sync                          AS empresa_status_sync,
+    COALESCE(sc.ativo, false)              AS sync_ativo,
+    sc.intervalo_incremental_min,
+    sc.intervalo_full_dias,
+    sc.ultimo_sync_at,
+    sc.proximo_sync_at,
+    sc.ultimo_full_sync_at,
+    sc.proximo_full_sync_at,
+    j.id                                   AS job_id,
+    -- COALESCE porque o LATERAL e LEFT: empresa que nunca sincronizou nao tem
+    -- job, e o sqlc tipa estas colunas como NOT NULL (elas sao, na tabela) —
+    -- sem isso o scan estoura justamente na empresa nova.
+    COALESCE(j.tipo, '')                   AS job_tipo,
+    COALESCE(j.status, '')                 AS job_status,
+    j.iniciado_at                          AS job_iniciado_at,
+    j.concluido_at                         AS job_concluido_at,
+    j.erro                                 AS job_erro,
+    j.ultimo_heartbeat_at                  AS job_heartbeat_at,
+    COALESCE(p.registros, 0)::BIGINT       AS job_registros
+FROM _etl.grupos g
+JOIN _etl.empresas e
+       ON e.grupo_id = g.id
+      AND e.deleted_at IS NULL
+LEFT JOIN _etl.sync_control sc ON sc.empresa_id = e.id
+LEFT JOIN LATERAL (
+    SELECT sj.id, sj.tipo, sj.status, sj.iniciado_at, sj.concluido_at,
+           sj.erro, sj.ultimo_heartbeat_at
+    FROM _etl.sync_jobs sj
+    WHERE sj.empresa_id = e.id
+    ORDER BY sj.created_at DESC
+    LIMIT 1
+) j ON TRUE
+LEFT JOIN LATERAL (
+    SELECT SUM(pr.registros_proc) AS registros
+    FROM _etl.sync_job_progress pr
+    WHERE pr.job_id = j.id
+) p ON TRUE
+WHERE g.deleted_at IS NULL
+ORDER BY g.nome, e.nome;
+
 -- name: CancelarJob :exec
 UPDATE _etl.sync_jobs
 SET

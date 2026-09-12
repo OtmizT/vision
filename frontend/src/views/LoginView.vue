@@ -51,6 +51,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import AppInput  from '@/components/ui/AppInput.vue'
 import AppButton from '@/components/ui/AppButton.vue'
+import { rotaInicial } from '@/utils/navegacao'
 
 const router   = useRouter()
 const auth     = useAuthStore()
@@ -70,7 +71,8 @@ async function submit() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push('/')
+    // Nem todo papel tem Dashboard; '/' mandaria o admin global para um 403.
+    router.push(rotaInicial(auth.user?.role))
   } catch (e: any) {
     const msg = e?.response?.data?.message
     errorMsg.value = msg === 'credenciais inválidas'

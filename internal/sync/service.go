@@ -37,6 +37,7 @@ type Service interface {
 	RefreshViewsGrupo(ctx context.Context, grupoID string) ([]RefreshViewResultado, error)
 	GetAdminOverview(ctx context.Context) (map[string]int64, error)
 	GetJobsAtivos(ctx context.Context) ([]JobAtivoRow, error)
+	ListEmpresasSyncGeral(ctx context.Context) ([]EmpresaSyncRow, error)
 	CancelarJob(ctx context.Context, jobID string) error
 
 	GetDLQPages(ctx context.Context) ([]DLQPageRow, error)
@@ -278,6 +279,17 @@ func (s *service) GetAdminOverview(ctx context.Context) (map[string]int64, error
 		result[c.Status] = c.Total
 	}
 	return result, nil
+}
+
+// ListEmpresasSyncGeral: visao do admin global, todas as empresas de todos os
+// grupos. Sem filtro de grupo de proposito — e a unica tela que precisa ver o
+// parque inteiro.
+func (s *service) ListEmpresasSyncGeral(ctx context.Context) ([]EmpresaSyncRow, error) {
+	rows, err := s.repo.ListEmpresasSyncGeral(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("syncService.ListEmpresasSyncGeral: %w", err)
+	}
+	return rows, nil
 }
 
 func (s *service) GetJobsAtivos(ctx context.Context) ([]JobAtivoRow, error) {

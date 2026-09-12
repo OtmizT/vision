@@ -47,6 +47,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore, type GrupoInfo } from '@/stores/auth'
+import { destinoAposEntrar } from '@/utils/navegacao'
 
 const auth     = useAuthStore()
 const router   = useRouter()
@@ -94,8 +95,9 @@ async function handleSelect(grupoID: string) {
     } else {
       await auth.selectGrupo(grupoID)
     }
-    const redirect = (route.query.redirect as string) || '/'
-    router.push(redirect)
+    // destinoAposEntrar recusa redirect externo e cai na tela do papel quando
+    // nao ha redirect — '/' mandaria o admin global para um 403.
+    router.push(destinoAposEntrar(auth.user?.role, route.query.redirect as string))
   } catch (e: unknown) {
     error.value = 'Erro ao selecionar grupo. Tente novamente.'
     selectedId.value = ''

@@ -286,6 +286,17 @@ func (h *Handler) AdminOverview(w http.ResponseWriter, r *http.Request) {
 	response.OK(w, data)
 }
 
+// AdminEmpresasSync: todas as empresas de todos os grupos, com o estado de
+// sync. Alimenta a primeira aba do Sync Control.
+func (h *Handler) AdminEmpresasSync(w http.ResponseWriter, r *http.Request) {
+	rows, err := h.svc.ListEmpresasSyncGeral(r.Context())
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "erro ao listar empresas", err)
+		return
+	}
+	response.OK(w, rows)
+}
+
 func (h *Handler) AdminJobsAtivos(w http.ResponseWriter, r *http.Request) {
 	jobs, err := h.svc.GetJobsAtivos(r.Context())
 	if err != nil {

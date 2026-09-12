@@ -850,6 +850,132 @@ func (q *Queries) InsertSyncJob(ctx context.Context, arg InsertSyncJobParams) (E
 	return i, err
 }
 
+const listEmpresasSyncGeral = `-- name: ListEmpresasSyncGeral :many
+SELECT
+    g.id                                   AS grupo_id,
+    g.nome                                 AS grupo_nome,
+    e.id                                   AS empresa_id,
+    e.nome                                 AS empresa_nome,
+    e.status                               AS empresa_status,
+    e.status_sync                          AS empresa_status_sync,
+    COALESCE(sc.ativo, false)              AS sync_ativo,
+    sc.intervalo_incremental_min,
+    sc.intervalo_full_dias,
+    sc.ultimo_sync_at,
+    sc.proximo_sync_at,
+    sc.ultimo_full_sync_at,
+    sc.proximo_full_sync_at,
+    j.id                                   AS job_id,
+    -- COALESCE porque o LATERAL e LEFT: empresa que nunca sincronizou nao tem
+    -- job, e o sqlc tipa estas colunas como NOT NULL (elas sao, na tabela) —
+    -- sem isso o scan estoura justamente na empresa nova.
+    COALESCE(j.tipo, '')                   AS job_tipo,
+    COALESCE(j.status, '')                 AS job_status,
+    j.iniciado_at                          AS job_iniciado_at,
+    j.concluido_at                         AS job_concluido_at,
+    j.erro                                 AS job_erro,
+    j.ultimo_heartbeat_at                  AS job_heartbeat_at,
+    COALESCE(p.registros, 0)::BIGINT       AS job_registros
+FROM _etl.grupos g
+JOIN _etl.empresas e
+       ON e.grupo_id = g.id
+      AND e.deleted_at IS NULL
+LEFT JOIN _etl.sync_control sc ON sc.empresa_id = e.id
+LEFT JOIN LATERAL (
+    SELECT sj.id, sj.tipo, sj.status, sj.iniciado_at, sj.concluido_at,
+           sj.erro, sj.ultimo_heartbeat_at
+    FROM _etl.sync_jobs sj
+    WHERE sj.empresa_id = e.id
+    ORDER BY sj.created_at DESC
+    LIMIT 1
+) j ON TRUE
+LEFT JOIN LATERAL (
+    SELECT SUM(pr.registros_proc) AS registros
+    FROM _etl.sync_job_progress pr
+    WHERE pr.job_id = j.id
+) p ON TRUE
+WHERE g.deleted_at IS NULL
+ORDER BY g.nome, e.nome
+`
+
+type ListEmpresasSyncGeralRow struct {
+	GrupoID                 pgtype.UUID        `json:"grupo_id"`
+	GrupoNome               string             `json:"grupo_nome"`
+	EmpresaID               pgtype.UUID        `json:"empresa_id"`
+	EmpresaNome             string             `json:"empresa_nome"`
+	EmpresaStatus           string             `json:"empresa_status"`
+	EmpresaStatusSync       string             `json:"empresa_status_sync"`
+	SyncAtivo               bool               `json:"sync_ativo"`
+	IntervaloIncrementalMin *int32             `json:"intervalo_incremental_min"`
+	IntervaloFullDias       *int32             `json:"intervalo_full_dias"`
+	UltimoSyncAt            pgtype.Timestamptz `json:"ultimo_sync_at"`
+	ProximoSyncAt           pgtype.Timestamptz `json:"proximo_sync_at"`
+	UltimoFullSyncAt        pgtype.Timestamptz `json:"ultimo_full_sync_at"`
+	ProximoFullSyncAt       pgtype.Timestamptz `json:"proximo_full_sync_at"`
+	JobID                   pgtype.UUID        `json:"job_id"`
+	JobTipo                 string             `json:"job_tipo"`
+	JobStatus               string             `json:"job_status"`
+	JobIniciadoAt           pgtype.Timestamptz `json:"job_iniciado_at"`
+	JobConcluidoAt          pgtype.Timestamptz `json:"job_concluido_at"`
+	JobErro                 pgtype.Text        `json:"job_erro"`
+	JobHeartbeatAt          pgtype.Timestamptz `json:"job_heartbeat_at"`
+	JobRegistros            int64              `json:"job_registros"`
+}
+
+// Todas as empresas de todos os grupos, com o estado de sincronizacao de cada
+// uma. E a unica consulta do sistema que lista empresas sem filtrar por grupo —
+// as demais partem de um grupo_id, o que obrigava a tela a fazer uma chamada
+// por grupo.
+//
+// O ultimo job vem por LATERAL, e nao por JOIN + DISTINCT ON: com LATERAL o
+// Postgres usa o indice (empresa_id, created_at DESC) uma vez por empresa, em
+// vez de ordenar a tabela de jobs inteira.
+//
+// Duracao NAO e um campo armazenado: o worker calcula e so escreve no log. Sai
+// daqui como diferenca de timestamps, o que significa que job em andamento tem
+// duracao parcial e job travado tem duracao enorme. A tela rotula isso.
+func (q *Queries) ListEmpresasSyncGeral(ctx context.Context) ([]ListEmpresasSyncGeralRow, error) {
+	rows, err := q.db.Query(ctx, listEmpresasSyncGeral)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListEmpresasSyncGeralRow
+	for rows.Next() {
+		var i ListEmpresasSyncGeralRow
+		if err := rows.Scan(
+			&i.GrupoID,
+			&i.GrupoNome,
+			&i.EmpresaID,
+			&i.EmpresaNome,
+			&i.EmpresaStatus,
+			&i.EmpresaStatusSync,
+			&i.SyncAtivo,
+			&i.IntervaloIncrementalMin,
+			&i.IntervaloFullDias,
+			&i.UltimoSyncAt,
+			&i.ProximoSyncAt,
+			&i.UltimoFullSyncAt,
+			&i.ProximoFullSyncAt,
+			&i.JobID,
+			&i.JobTipo,
+			&i.JobStatus,
+			&i.JobIniciadoAt,
+			&i.JobConcluidoAt,
+			&i.JobErro,
+			&i.JobHeartbeatAt,
+			&i.JobRegistros,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSyncJobsByEmpresa = `-- name: ListSyncJobsByEmpresa :many
 SELECT id, empresa_id, tipo, status, erro, iniciado_at, concluido_at, created_at, executor, ultimo_heartbeat_at
 FROM _etl.sync_jobs
