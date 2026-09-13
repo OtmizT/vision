@@ -256,12 +256,12 @@ const fmtPorTipo = (v: number, tipo: NoDiario['tipo']) =>
   gap: var(--sp-4); flex-wrap: wrap;
 }
 .pd-title {
-  font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600;
+  font-family: var(--font-body); font-size: var(--fs-md); font-weight: 600;
   color: var(--text);
 }
 .pd-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
 .pd-vazio {
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim);
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim);
   padding: 24px 0; text-align: center;
 }
 .pd-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -269,7 +269,7 @@ const fmtPorTipo = (v: number, tipo: NoDiario['tipo']) =>
 .pv-btn {
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 7px;
-  padding: 5px 11px; font-family: var(--font-mono); font-size: var(--fs-xs);
+  padding: 5px 11px; font-family: var(--font-body); font-size: var(--fs-xs);
   letter-spacing: 0.5px; cursor: pointer; transition: var(--transition);
 }
 .pv-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -290,7 +290,7 @@ const fmtPorTipo = (v: number, tipo: NoDiario['tipo']) =>
 .pv-table th {
   position: sticky; top: 0; z-index: 2;
   background: var(--surface);
-  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 1px;
+  font-family: var(--font-body); font-size: var(--fs-xs); letter-spacing: 1px;
   color: var(--text-dim); font-weight: 600;
   padding: 10px 12px; border-bottom: 1px solid var(--border-strong);
   white-space: nowrap;
@@ -330,7 +330,7 @@ const fmtPorTipo = (v: number, tipo: NoDiario['tipo']) =>
 
 .pv-td-num, .pv-td-total {
   padding: 7px 12px; text-align: right;
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted);
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-muted);
   white-space: nowrap;
 }
 .pv-td-total { border-left: 1px solid var(--border); font-weight: 600; color: var(--text); }
@@ -365,7 +365,7 @@ const fmtPorTipo = (v: number, tipo: NoDiario['tipo']) =>
   width: 16px; height: 16px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 4px;
-  color: var(--text-muted); font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1;
+  color: var(--text-muted); font-family: var(--font-body); font-size: var(--fs-xs); line-height: 1;
   cursor: pointer; transition: var(--transition); padding: 0;
 }
 .pv-toggle:hover { border-color: var(--primary); color: var(--primary); }
@@ -377,7 +377,7 @@ const fmtPorTipo = (v: number, tipo: NoDiario['tipo']) =>
   position: sticky; bottom: 0;
   background: var(--surface); border-top: 1px solid var(--border-strong);
   font-weight: 700; color: var(--text);
-  font-family: var(--font-mono); font-size: var(--fs-xs); padding: 10px 12px;
+  font-family: var(--font-body); font-size: var(--fs-xs); padding: 10px 12px;
 }
 /* A célula do rodapé precisa voltar a table-cell. Como as do corpo, ela é flex
    por causa do botão de expandir — mas o rodapé não tem botão, e com display:flex

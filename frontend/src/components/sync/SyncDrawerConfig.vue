@@ -120,7 +120,7 @@ function fmtDate(d: string) {
 .drawer-tab-content { padding: 24px; }
 
 .section-header { margin-bottom: 20px; }
-.section-title { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.section-title { font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 .section-desc { font-size: var(--fs-xs); color: var(--text-dim); margin: 0; }
 
 /* Switch Toggle */
@@ -140,7 +140,7 @@ input:checked + .slider:before { transform: translateX(18px); background-color: 
 .btn-exec--full:hover:not(:disabled) { border-color: var(--warning); color: var(--warning); }
 .btn-exec:disabled { opacity: 0.35; cursor: not-allowed; }
 .executor-info { display: flex; flex-direction: column; gap: 2px; }
-.executor-name { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: var(--text); }
+.executor-name { font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 600; color: var(--text); }
 .executor-meta { font-size: var(--fs-xs); color: var(--text-dim); }
 .executor-notes { margin-top: 8px; font-size: var(--fs-xs); color: var(--text-dim); font-style: italic; border-top: 1px solid var(--surface-2); padding-top: 8px; }
 
@@ -148,7 +148,7 @@ input:checked + .slider:before { transform: translateX(18px); background-color: 
 .mini-modal-overlay { position: fixed; inset: 0; background: var(--overlay); backdrop-filter: blur(2px); z-index: 2100; display: flex; align-items: center; justify-content: center; }
 .mini-modal { width: 320px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .form-group { margin: 16px 0; }
-.form-group label { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); margin-bottom: 8px; }
+.form-group label { display: block; font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); margin-bottom: 8px; }
 .input-block { width: 100%; background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 6px; padding: 10px; color: var(--text); font-size: var(--fs-xs); outline: none; resize: none; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .btn-inline { background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--text); border-radius: 4px; padding: 6px 12px; font-size: var(--fs-xs); cursor: pointer; }

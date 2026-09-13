@@ -4,14 +4,14 @@
     <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;align-items:start" class="perm-grid">
       <!-- Lista de usuarios -->
       <div class="table-card" style="padding:0">
-        <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px">USUARIOS</div>
+        <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px">USUARIOS</div>
         <div v-if="loadingU" style="padding:32px;text-align:center"><div class="spinner"></div></div>
         <div v-else>
           <div v-for="u in usuarios" :key="u.id" :class="['user-row', {active: selectedUser?.id===u.id}]" @click="selectUser(u)">
             <div class="u-avatar">{{ initials(u.nome) }}</div>
             <div style="min-width:0">
               <p style="font-size: var(--fs-sm);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ u.nome }}</p>
-              <p style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ u.role }}</p>
+              <p style="font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim)">{{ u.role }}</p>
             </div>
           </div>
         </div>
@@ -19,7 +19,7 @@
 
       <!-- Permissoes do usuario selecionado -->
       <div>
-        <div v-if="!selectedUser" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:48px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">
+        <div v-if="!selectedUser" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:48px;text-align:center;font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim)">
           Selecione um usuario para gerenciar as permissoes.
         </div>
         <template v-else>
@@ -29,16 +29,16 @@
           </div>
           <div class="table-card">
             <div v-if="loadingP" style="padding:32px;text-align:center"><div class="spinner"></div></div>
-            <div v-else-if="permissoes.length===0" style="padding:32px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">Nenhuma permissao concedida.</div>
+            <div v-else-if="permissoes.length===0" style="padding:32px;text-align:center;font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim)">Nenhuma permissao concedida.</div>
             <div v-else style="overflow-x:auto">
               <table>
                 <thead><tr><th>EMPRESA</th><th>RECURSO</th><th>ACAO</th><th>CONCEDIDO EM</th><th style="text-align:right">REVOGAR</th></tr></thead>
                 <tbody>
                   <tr v-for="p in permissoes" :key="p.id">
-                    <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ empresaName(p.empresa_id) }}</td>
+                    <td style="font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim)">{{ empresaName(p.empresa_id) }}</td>
                     <td><span class="pill pill-blue">{{ p.recurso }}</span></td>
                     <td><span class="pill pill-gray">{{ p.acao }}</span></td>
-                    <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ fmt(p.created_at) }}</td>
+                    <td style="font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim)">{{ fmt(p.created_at) }}</td>
                     <td style="text-align:right"><button class="btn-danger" @click="revoke(p)">Revogar</button></td>
                   </tr>
                 </tbody>
@@ -139,7 +139,7 @@ onMounted(()=>{ loadUsuarios(); loadEmpresas() })
 @media(max-width:900px){.perm-grid{grid-template-columns:1fr!important}}
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 table{width:100%;border-collapse:collapse}
-th{font-family:var(--font-mono);font-size: var(--fs-xs);letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:11px 18px;text-align:left;background:var(--surface-2);border-bottom:1px solid var(--border)}
+th{font-family:var(--font-body);font-size: var(--fs-xs);letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:11px 18px;text-align:left;background:var(--surface-2);border-bottom:1px solid var(--border)}
 td{padding:10px 18px;font-size: var(--fs-sm);color:var(--text);border-bottom:1px solid var(--border)}
 tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
 .user-row{display:flex;align-items:center;gap:10px;padding:11px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:var(--transition)}
@@ -147,7 +147,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
 .user-row:hover{background:var(--surface-2)}
 .user-row.active{background:var(--primary-weak);border-left:2px solid var(--primary)}
 .u-avatar{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--primary),var(--primary-line));display:flex;align-items:center;justify-content:center;font-size: var(--fs-xs);font-weight:800;color:var(--text-oncolor);flex-shrink:0}
-.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-family:var(--font-mono);font-size: var(--fs-xs);font-weight:600}
+.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-family:var(--font-body);font-size: var(--fs-xs);font-weight:600}
 .pill-blue{background:var(--primary-weak);color:var(--info)}.pill-gray{background:var(--surface-2);color:var(--text-dim)}
 .btn-primary{background:var(--primary);color:var(--text-oncolor);border:none;border-radius:8px;padding:8px 16px;font-size: var(--fs-sm);font-weight:600;cursor:pointer}
 .btn-primary:hover:not(:disabled){background:var(--primary-hover)}.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
@@ -162,10 +162,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
 .modal-body{padding:24px;display:flex;flex-direction:column;gap:16px}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
 .field{display:flex;flex-direction:column;gap:6px}
-label{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
+label{font-family:var(--font-body);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
 .input-el{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:9px 12px;font-size: var(--fs-sm);color:var(--text);outline:none}
 .input-el:focus{border-color:var(--primary)}
-.err-box{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger);background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:7px;padding:9px 12px}
+.err-box{font-family:var(--font-body);font-size: var(--fs-xs);color:var(--danger);background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:7px;padding:9px 12px}
 .spinner{width:24px;height:24px;border:2px solid var(--border-strong);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>

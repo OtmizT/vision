@@ -126,7 +126,7 @@ async function sair() {
 .field { display: flex; flex-direction: column; gap: 6px; }
 
 label {
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim);
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim);
   letter-spacing: 1.5px; text-transform: uppercase;
 }
 
@@ -138,7 +138,7 @@ label {
 .input-el:focus { border-color: var(--primary); }
 
 .erro {
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--danger);
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--danger);
   background: var(--danger-weak); border-radius: 8px; padding: 10px 12px; margin: 0;
 }
 

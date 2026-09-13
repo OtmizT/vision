@@ -178,7 +178,7 @@ watch(() => props.item, () => { activeTab.value = 'request' })
   padding: 24px; border-bottom: 1px solid var(--border);
   display: flex; justify-content: space-between; align-items: center;
 }
-.header-label { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 1px; }
+.header-label { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 1px; }
 .header-title { margin: 4px 0 0 0; font-size: var(--fs-lg); color: var(--primary); }
 
 .btn-close {
@@ -191,7 +191,7 @@ watch(() => props.item, () => { activeTab.value = 'request' })
 }
 .tab-item {
   background: transparent; border: none; padding: 16px 0;
-  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 700; color: var(--text-dim);
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 700; color: var(--text-dim);
   cursor: pointer; position: relative;
 }
 .tab-item.active { color: var(--primary); }
@@ -207,7 +207,7 @@ watch(() => props.item, () => { activeTab.value = 'request' })
 .pane-header {
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
 }
-.pane-label { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
+.pane-label { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); }
 
 .btn-copy {
   background: var(--surface-2); border: 1px solid var(--border-strong); color: var(--primary);
@@ -216,7 +216,7 @@ watch(() => props.item, () => { activeTab.value = 'request' })
 
 .json-block {
   flex: 1; background: var(--surface-2); border: 1px solid var(--border-strong);
-  border-radius: 8px; padding: 20px; font-family: var(--font-mono);
+  border-radius: 8px; padding: 20px; font-family: var(--font-body);
   font-size: var(--fs-xs); color: var(--text-muted); overflow: auto;
   line-height: 1.5;
 }

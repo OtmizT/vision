@@ -203,7 +203,7 @@ const grupoAtivo = computed(() => {
   background: var(--primary); flex-shrink: 0;
 }
 .grupo-nome {
-  font-family: var(--font-mono); font-size: var(--fs-xs);
+  font-family: var(--font-body); font-size: var(--fs-xs);
   letter-spacing: 0.5px; color: var(--text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -231,7 +231,7 @@ const grupoAtivo = computed(() => {
 @media (max-width: 900px) { .filtro-txt { display: none; } }
 
 .sync-info {
-  font-family: var(--font-mono); font-size: var(--fs-xs);
+  font-family: var(--font-body); font-size: var(--fs-xs);
   color: var(--text-dim); white-space: nowrap;
 }
 @media (max-width: 640px) { .sync-info { display: none; } }

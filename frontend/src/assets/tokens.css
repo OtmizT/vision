@@ -99,22 +99,21 @@
    ───────────────────────────────────────────────────────────────── */
 :root {
   /*
-   * Duas famílias, dois papéis.
+   * Uma família só: Geist, do corpo ao menor rótulo.
    *
-   * --font-body  é o texto de verdade: corpo, navegação, cards, células de
-   *              tabela, rótulos de eixo dos gráficos.
-   * --font-mono  é o papel de apoio: rótulos curtos, badges, pills de status,
-   *              cabeçalhos de coluna e valores monetários.
+   * Houve por um momento uma segunda família (Geist Mono) no papel de apoio —
+   * rótulos curtos, badges, cabeçalhos de coluna. Na tela ficou monoespaçado
+   * demais para o gosto do produto, e a distinção voltou a ser feita como já
+   * era antes: caixa alta, letter-spacing e peso, que continuam intactos em
+   * cada um desses elementos.
    *
-   * O token chamava-se --font-display e apontava para Space Grotesk, que é
-   * proporcional. Virou --font-mono junto com a troca para Geist Mono: manter o
-   * nome antigo sobre uma fonte monoespaçada enganaria quem mexesse depois.
+   * Isso devolve ao `tnum` a responsabilidade de alinhar as colunas de valores
+   * — ver .num, mais abaixo.
    *
    * O sufixo "Variable" faz parte do nome que o @font-face do Fontsource
-   * declara — sem ele o navegador não encontra a família e cai no fallback.
+   * declara; sem ele o navegador não encontra a família e cai no fallback.
    */
   --font-body: 'Geist Variable', system-ui, sans-serif;
-  --font-mono: 'Geist Mono Variable', ui-monospace, 'Courier New', monospace;
 
   /* Escala em rem. O piso é --fs-xs = 12px: a base anterior tinha textos de
      8px e 9px, pequenos demais para leitura. */
@@ -150,6 +149,20 @@ html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
   font-size: var(--fs-base);
+  /*
+   * Dígitos de largura fixa em toda a aplicação.
+   *
+   * Na Geist os dígitos são proporcionais, e bastante: medido no navegador,
+   * "888888" fica 30px mais largo que "111111" a 20px. Numa grade de doze
+   * colunas mensais isso desalinha cada linha da tabela de Resultado.
+   *
+   * Enquanto havia uma segunda família monoespaçada nos rótulos, ela resolvia
+   * isso onde estava aplicada. Com família única, a responsabilidade passa para
+   * cá — e vale global em vez de classe a classe porque aqui quase todo número
+   * é um valor a ser comparado em coluna. O custo em texto corrido é
+   * imperceptível.
+   */
+  font-variant-numeric: tabular-nums;
   line-height: 1.5;
   background: var(--bg);
   color: var(--text);
@@ -163,11 +176,11 @@ body {
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
 
 /* Números tabulares.
-   Com Geist Mono o alinhamento das colunas vem da própria fonte — todo glifo
-   ocupa a mesma largura. O "tnum" fica como cinto e suspensório: se a família
-   cair no fallback, o substituto pode ser proporcional. */
+   A Geist é proporcional: o "1" é mais estreito que o "8", e sem `tnum` as
+   colunas de valores desalinham a cada linha. Esta declaração é o que sustenta
+   o alinhamento — não é detalhe cosmético, e some se a classe sumir. */
 .num {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-feature-settings: "tnum" 1;
   letter-spacing: -.01em;
 }

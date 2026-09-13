@@ -1305,7 +1305,7 @@ onBeforeUnmount(() => {
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 6px;
   padding: 4px 8px;
-  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 0.5px;
+  font-family: var(--font-body); font-size: var(--fs-xs); letter-spacing: 0.5px;
   cursor: pointer; transition: var(--transition); white-space: nowrap;
 }
 .fd-acao:hover { border-color: var(--primary); color: var(--primary); }
@@ -1318,7 +1318,7 @@ onBeforeUnmount(() => {
 }
 .fd-grupo:first-child { border-top: none; }
 .fd-grupo-rot {
-  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 1px;
+  font-family: var(--font-body); font-size: var(--fs-xs); letter-spacing: 1px;
   color: var(--text-dim); font-weight: 600; white-space: nowrap;
 }
 .fd-grupo-acoes { display: flex; gap: 4px; }
@@ -1358,7 +1358,7 @@ onBeforeUnmount(() => {
 .state-msg {
   display: flex; align-items: center; gap: 10px;
   justify-content: center; padding: 60px 24px;
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim);
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim);
 }
 .state-msg--erro { color: var(--danger); }
 
@@ -1386,7 +1386,7 @@ onBeforeUnmount(() => {
 
 .section-title {
   display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono); font-size: var(--fs-xs);
+  font-family: var(--font-body); font-size: var(--fs-xs);
   color: var(--text-dim); letter-spacing: 2px; text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -1431,12 +1431,12 @@ onBeforeUnmount(() => {
 .kpi-icon--accent { background: var(--primary-weak); color: var(--primary); }
 .kpi-icon--cyan   { background: var(--accent-weak);  color: var(--accent); }
 
-/* Valor cheio, com centavos. A Geist Mono ja alinha por ser monoespacada; o
-   `tnum` cobre o caso de a familia cair no fallback.
+/* Valor cheio, com centavos. `tnum` porque a Geist e proporcional: sem isso os
+   quatro cards de KPI deixam de alinhar entre si.
    fs-xl e nao fs-2xl: "R$ 1.171.900,00" tem 15 caracteres e a 36px nao caberia
    na coluna do grid de 4 cards. */
 .kpi-value {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-feature-settings: "tnum" 1;
   font-size: var(--fs-xl);
   font-weight: 600; line-height: 1.15; letter-spacing: -.02em;
@@ -1490,11 +1490,11 @@ onBeforeUnmount(() => {
   margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
 }
 .chart-title { font-size: var(--fs-base); font-weight: 700; }
-.chart-sub   { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
+.chart-sub   { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
 
 .chart-legend {
   display: flex; align-items: center; gap: 10px;
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted); flex-wrap: wrap;
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-muted); flex-wrap: wrap;
 }
 .leg-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 3px; }
 
@@ -1507,7 +1507,7 @@ onBeforeUnmount(() => {
   background: var(--primary-weak); color: var(--primary);
   border: 1px solid var(--primary); border-radius: 20px;
   padding: 2px 10px; margin-right: var(--sp-3);
-  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
+  font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 600;
   cursor: pointer; transition: var(--transition); white-space: nowrap;
 }
 .chart-limpar:hover { background: var(--primary); color: var(--text-oncolor); }

@@ -12,7 +12,7 @@ withDefaults(defineProps<{
 
 <style scoped>
 .badge {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   padding: 3px 9px;
   border-radius: 20px;

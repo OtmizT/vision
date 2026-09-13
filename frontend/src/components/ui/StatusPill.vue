@@ -39,7 +39,7 @@ const label   = computed(() => entry.value.label)
   gap: 5px;
   padding: 3px 9px;
   border-radius: 20px;
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: var(--fs-xs);
   font-weight: 600;
   white-space: nowrap;

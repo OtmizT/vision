@@ -37,11 +37,11 @@ defineProps<{ itens: FluxoTransacao[] }>()
 .pvv { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 
 .fc-card-title {
-  font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600;
+  font-family: var(--font-body); font-size: var(--fs-md); font-weight: 600;
   color: var(--text);
 }
 .fc-card-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
-.fc-vazio { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); padding: 16px 0; }
+.fc-vazio { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); padding: 16px 0; }
 
 /* A lista rola em vez de esticar o card com o volume de títulos. A rolagem fica
    na lista, não no card, para o título continuar visível.
@@ -55,17 +55,17 @@ defineProps<{ itens: FluxoTransacao[] }>()
   padding: 5px 0; border-bottom: 1px solid var(--border);
 }
 .venc-item:last-child { border-bottom: none; }
-.venc-data { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
+.venc-data { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); }
 .venc-desc { min-width: 0; display: flex; flex-direction: column; }
 .venc-nome {
   font-size: var(--fs-xs); line-height: 1.3; color: var(--text);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .venc-cat {
-  font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.3; color: var(--text-dim);
+  font-family: var(--font-body); font-size: var(--fs-xs); line-height: 1.3; color: var(--text-dim);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.venc-val { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
+.venc-val { font-family: var(--font-body); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap; }
 .res-val--in  { color: var(--success); }
 .res-val--out { color: var(--danger); }
 </style>

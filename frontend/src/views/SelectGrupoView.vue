@@ -280,7 +280,7 @@ function cancelar() {
 }
 
 .grupo-slug {
-  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px;
+  font-family: var(--font-body); font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px;
 }
 
 .spinner {
