@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -23,6 +24,7 @@ type Repository interface {
 	HasGrupoVinculo(ctx context.Context, usuarioID, grupoID string) (bool, error)
 	List(ctx context.Context, grupoID string, limit, offset int32) ([]*Usuario, error)
 	Count(ctx context.Context, grupoID string) (int64, error)
+	RoleNoGrupo(ctx context.Context, usuarioID, grupoID string) (string, error)
 	Update(ctx context.Context, id, grupoID, nome, role string, ativo bool) (*Usuario, error)
 	UpdatePassword(ctx context.Context, id, passwordHash string) error
 	SoftDelete(ctx context.Context, id string) error
@@ -213,14 +215,44 @@ func (r *repository) countLegacy(ctx context.Context, grupoID string) (int64, er
 	return n, nil
 }
 
+// RoleNoGrupo devolve o papel do usuário dentro de um grupo, ou "" se não
+// houver vínculo. A coluna pode não existir em bancos com a 000024 pendente.
+func (r *repository) RoleNoGrupo(ctx context.Context, usuarioID, grupoID string) (string, error) {
+	const q = `SELECT role FROM _etl.usuario_grupos WHERE usuario_id = $1::uuid AND grupo_id = $2::uuid`
+	var role string
+	if err := r.pool.QueryRow(ctx, q, usuarioID, grupoID).Scan(&role); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) || isUndefinedTable(err) || isUndefinedColumn(err) {
+			return "", nil
+		}
+		return "", fmt.Errorf("usuarios.repository.RoleNoGrupo: %w", err)
+	}
+	return role, nil
+}
+
 func (r *repository) Update(ctx context.Context, id, grupoID, nome, role string, ativo bool) (*Usuario, error) {
 	q := sqlcgen.New(r.pool)
 	var uid pgtype.UUID
 	if err := uid.Scan(id); err != nil {
 		return nil, fmt.Errorf("usuarios.repository.Update scan uuid: %w", err)
 	}
-	// Atualiza nome e ativo na tabela base (role fica por grupo)
-	row, err := q.UpdateUsuario(ctx, sqlcgen.UpdateUsuarioParams{ID: uid, Nome: nome, Role: role, Ativo: ativo})
+	/*
+	 * usuarios.role e preservada, nao sobrescrita.
+	 *
+	 * O comentario antigo aqui dizia "role fica por grupo" enquanto a query
+	 * gravava role na tabela base — a coluna GLOBAL, aquela que o CASE WHEN de
+	 * auth.GetRoleNoGrupo consulta para decidir quem e admin da plataforma.
+	 * Editar um usuario a partir de um grupo reescrevia o papel dele em todos
+	 * os grupos, e permitia promove-lo a admin_global.
+	 *
+	 * O papel de grupo vai para usuario_grupos, logo abaixo, que e onde ele
+	 * pertence. A tabela base segue com o que ja tinha.
+	 */
+	atual, err := r.GetByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("usuarios.repository.Update ler role atual: %w", err)
+	}
+
+	row, err := q.UpdateUsuario(ctx, sqlcgen.UpdateUsuarioParams{ID: uid, Nome: nome, Role: atual.Role, Ativo: ativo})
 	if err != nil {
 		return nil, fmt.Errorf("usuarios.repository.Update: %w", err)
 	}

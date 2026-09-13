@@ -20,12 +20,26 @@ type Service interface {
 	Delete(ctx context.Context, id string) error
 }
 
-type service struct {
-	repo Repository
+/*
+TokenRevoker derruba as sessoes de um usuario.
+
+internal/auth.Repository ja satisfaz a interface — RevokeAllUserTokens existe
+desde a fase 3 e nunca foi chamada de lugar nenhum. Sem ela, rebaixar alguem
+nao tinha efeito por ate sete dias: o access token ja emitido segue valido, e o
+refresh reemite outro com o papel antigo.
+*/
+type TokenRevoker interface {
+	RevokeAllUserTokens(ctx context.Context, usuarioID string) error
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+type service struct {
+	repo Repository
+	// revoker pode ser nil em montagens de teste.
+	revoker TokenRevoker
+}
+
+func NewService(repo Repository, revoker TokenRevoker) Service {
+	return &service{repo: repo, revoker: revoker}
 }
 
 func (s *service) Create(ctx context.Context, grupoID string, req CreateRequest) (*CreateResult, error) {
@@ -131,7 +145,23 @@ func (s *service) Update(ctx context.Context, id, grupoID string, req UpdateRequ
 		return nil, apperror.NotFound("usuário não encontrado")
 	}
 
+	anterior, err := s.repo.RoleNoGrupo(ctx, id, grupoID)
+	if err != nil {
+		return nil, fmt.Errorf("usuarios.service.Update ler papel atual: %w", err)
+	}
+
+	/*
+	 * Papel ausente no corpo preserva o que estava, e nao rebaixa para viewer.
+	 *
+	 * Um PUT que so quisesse corrigir o nome apagava o papel do usuario em
+	 * silencio: 200 OK, resposta com o nome novo, e o administrador do grupo
+	 * descobria dias depois que perdeu o proprio acesso administrativo. Nada
+	 * no retorno anunciava a troca.
+	 */
 	role := req.Role
+	if role == "" {
+		role = anterior
+	}
 	if role == "" {
 		role = "viewer"
 	}
@@ -140,7 +170,27 @@ func (s *service) Update(ctx context.Context, id, grupoID string, req UpdateRequ
 	if err != nil {
 		return nil, fmt.Errorf("usuarios.service.Update: %w", err)
 	}
+
+	// Mudanca de papel e desativacao so valem quando a sessao em curso cai.
+	if role != anterior || !req.Ativo {
+		s.revogarSessoes(ctx, id)
+	}
 	return u, nil
+}
+
+/*
+revogarSessoes e best-effort de proposito.
+
+A alteracao ja foi gravada quando chegamos aqui. Devolver erro faria o
+administrador repetir um PUT que ja surtiu efeito, e a repeticao tenderia a
+falhar no mesmo ponto. O custo de nao revogar e limitado: o access token expira
+em 15 minutos, e o refresh e o unico caminho para renova-lo.
+*/
+func (s *service) revogarSessoes(ctx context.Context, usuarioID string) {
+	if s.revoker == nil {
+		return
+	}
+	_ = s.revoker.RevokeAllUserTokens(ctx, usuarioID)
 }
 
 func (s *service) UpdatePassword(ctx context.Context, id string, req UpdatePasswordRequest) error {
@@ -156,6 +206,9 @@ func (s *service) UpdatePassword(ctx context.Context, id string, req UpdatePassw
 	if err := s.repo.UpdatePassword(ctx, id, string(hash)); err != nil {
 		return fmt.Errorf("usuarios.service.UpdatePassword: %w", err)
 	}
+	// Trocar a senha de alguem sem derrubar as sessoes dele nao tira ninguem de
+	// dentro: quem estava logado com a senha antiga continua ate sete dias.
+	s.revogarSessoes(ctx, id)
 	return nil
 }
 
@@ -166,6 +219,8 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	if err := s.repo.SoftDelete(ctx, id); err != nil {
 		return fmt.Errorf("usuarios.service.Delete: %w", err)
 	}
+	// Soft delete sem revogar deixava o usuario apagado navegando normalmente.
+	s.revogarSessoes(ctx, id)
 	return nil
 }
 

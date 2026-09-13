@@ -39,7 +39,7 @@ func buildRouter(t *testing.T) http.Handler {
 	empresasSvc := empresas.NewService(&nullEmpresasRepo{})
 	dispatcher := &nullDispatcher{}
 	syncSvc := syncsvc.NewService(&nullSyncRepo{}, dispatcher, zerolog.Nop())
-	usuariosSvc := usuarios.NewService(&nullUsuariosRepo{})
+	usuariosSvc := usuarios.NewService(&nullUsuariosRepo{}, nil)
 	permissoesSvc := permissoes.NewService(&nullPermissoesRepo{})
 	omieConfigSvc := omie_config.NewService(&nullOmieConfigRepo{})
 
@@ -107,7 +107,7 @@ func TestIntegration_AuditMiddlewareRunsOnAllRoutes(t *testing.T) {
 		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc, nil),
 		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc, nil),
 		SyncHandler:       syncsvc.NewHandler(syncsvc.NewService(&nullSyncRepo{}, &nullDispatcher{}, zerolog.Nop()), jwtSvc, syncsvc.NewSSEHub()),
-		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc, nil),
+		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}, nil), jwtSvc, nil),
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
@@ -360,6 +360,9 @@ func (r *nullUsuariosRepo) GetByEmail(_ context.Context, _ string) (*usuarios.Us
 func (r *nullUsuariosRepo) HasGrupoVinculo(_ context.Context, _, _ string) (bool, error) {
 	return false, nil
 }
+func (r *nullUsuariosRepo) RoleNoGrupo(_ context.Context, _, _ string) (string, error) {
+	return "viewer", nil
+}
 func (r *nullUsuariosRepo) UpdatePassword(_ context.Context, _, _ string) error        { return nil }
 func (r *nullUsuariosRepo) SoftDelete(_ context.Context, _ string) error               { return nil }
 func (r *nullUsuariosRepo) InsertGrupoVinculo(_ context.Context, _, _, _ string) error { return nil }
@@ -508,7 +511,7 @@ func TestIntegration_AuditoriaRegistraQuemFez(t *testing.T) {
 		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc, nil),
 		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc, nil),
 		SyncHandler:       syncsvc.NewHandler(syncsvc.NewService(&nullSyncRepo{}, &nullDispatcher{}, zerolog.Nop()), jwtSvc, syncsvc.NewSSEHub()),
-		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc, nil),
+		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}, nil), jwtSvc, nil),
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
@@ -541,7 +544,7 @@ func TestIntegration_AuditoriaRegistraAutorDeAcessoNegado(t *testing.T) {
 		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc, nil),
 		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc, nil),
 		SyncHandler:       syncsvc.NewHandler(syncsvc.NewService(&nullSyncRepo{}, &nullDispatcher{}, zerolog.Nop()), jwtSvc, syncsvc.NewSSEHub()),
-		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc, nil),
+		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}, nil), jwtSvc, nil),
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),

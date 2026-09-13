@@ -27,7 +27,7 @@
             <tr v-for="u in usuarios" :key="u.id">
               <td style="font-weight:600">{{ u.nome }}</td>
               <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ u.email }}</td>
-              <td><span :class="['pill', roleCls(u.role)]">{{ u.role }}</span></td>
+              <td><span :class="['pill', roleCls(u.role)]">{{ rotuloPapel(u.role) }}</span></td>
               <td><span :class="['pill', u.ativo?'pill-green':'pill-gray']">{{ u.ativo?"Ativo":"Inativo" }}</span></td>
               <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ fmt(u.created_at) }}</td>
               <td style="text-align:right;white-space:nowrap">
@@ -96,6 +96,7 @@
 import { ref, computed, onMounted } from "vue"
 import { useAuthStore } from "@/stores/auth"
 import api from "@/api/client"
+import { papeisAtribuiveis, rotuloPapel } from "@/utils/papeis"
 interface Usuario { id:string;nome:string;email:string;role:string;ativo:boolean;created_at:string }
 const auth = useAuthStore()
 const grupos = ref<{id:string;nome:string}[]>([])
@@ -116,11 +117,9 @@ const saveErr=ref(""); const pwdErr=ref(""); const delErr=ref("")
 const saving=ref(false); const savingPwd=ref(false); const deleting=ref(false)
 const successMsg=ref("")
 const pwd=ref({p1:"",p2:""})
-const roles = computed(() => {
-  const base = [{value:"admin_grupo",label:"Admin Grupo"},{value:"viewer",label:"Viewer"}]
-  if(auth.isAdminGlobal) return [{value:"admin_global",label:"Admin Global"},...base]
-  return base
-})
+// Admin Global saiu do seletor: era conceder, por uma rota de grupo, o papel que
+// manda na plataforma inteira. Ver utils/papeis.ts.
+const roles = computed(() => papeisAtribuiveis())
 async function load() {
   if(!grupoId.value) return
   loading.value=true; error.value=""

@@ -89,7 +89,7 @@ func main() {
 	empresasSvc := empresas.NewService(empresasRepo)
 	dispatcher := webhooks.NewDispatcher(webhooksRepo, log)
 	syncSvc := syncsvc.NewService(syncRepo, dispatcher, log)
-	usuariosSvc := usuarios.NewService(usuariosRepo)
+	usuariosSvc := usuarios.NewService(usuariosRepo, authRepo)
 	permissoesSvc := permissoes.NewService(permissoesRepo)
 	omieConfigSvc := omie_config.NewService(omieConfigRepo)
 
