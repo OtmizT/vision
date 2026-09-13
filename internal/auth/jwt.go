@@ -31,6 +31,15 @@ type JWTClaims struct {
 	 * 000031 revoga as sessoes justamente por isso.
 	 */
 	Contexto Contexto `json:"contexto"`
+	/*
+	 * SenhaProvisoria viaja no token para a trava nao custar uma consulta ao
+	 * banco em toda requisicao.
+	 *
+	 * O token dura 15 minutos, entao no pior caso alguem que acabou de trocar a
+	 * senha carrega a marca por mais um quarto de hora — mas a troca emite
+	 * token novo na hora, e o que sobra e so o efeito de uma aba antiga.
+	 */
+	SenhaProvisoria bool `json:"senha_provisoria,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -44,7 +53,7 @@ type PreAuthClaims struct {
 }
 
 type JWTService interface {
-	Generate(userID, grupoID, email, role string, contexto Contexto) (string, error)
+	Generate(userID, grupoID, email, role string, contexto Contexto, senhaProvisoria bool) (string, error)
 	Validate(tokenStr string) (*JWTClaims, error)
 	GeneratePreAuth(userID, email string) (string, error)
 	ValidatePreAuth(tokenStr string) (*PreAuthClaims, error)
@@ -58,14 +67,15 @@ func NewJWTService(secret string) JWTService {
 	return &jwtService{secret: []byte(secret)}
 }
 
-func (s *jwtService) Generate(userID, grupoID, email, role string, contexto Contexto) (string, error) {
+func (s *jwtService) Generate(userID, grupoID, email, role string, contexto Contexto, senhaProvisoria bool) (string, error) {
 	now := time.Now()
 	claims := JWTClaims{
-		UserID:   userID,
-		GrupoID:  grupoID,
-		Email:    email,
-		Role:     role,
-		Contexto: contexto,
+		UserID:          userID,
+		GrupoID:         grupoID,
+		Email:           email,
+		Role:            role,
+		Contexto:        contexto,
+		SenhaProvisoria: senhaProvisoria,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt:  jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(now.Add(accessTokenDuration)),

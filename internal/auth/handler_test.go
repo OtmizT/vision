@@ -33,6 +33,9 @@ func (m *mockService) TrocaGrupo(_ context.Context, _ string, _ Contexto, _ stri
 func (m *mockService) GetGrupos(_ context.Context, _ string) ([]GrupoInfo, error) {
 	return nil, nil
 }
+func (m *mockService) TrocarSenhaPropria(_ context.Context, _ string, _ Contexto, _ string, _ TrocaSenhaRequest) (*LoginResponse, error) {
+	return m.loginResp, m.loginErr
+}
 func (m *mockService) GetContextos(_ context.Context, _ string) (*ContextosResponse, error) {
 	return &ContextosResponse{}, nil
 }
@@ -135,7 +138,7 @@ func TestHandler_Me_WithValidToken(t *testing.T) {
 
 	// Gera token válido
 	jwtSvc := NewJWTService(testSecret)
-	token, _ := jwtSvc.Generate("u1", "g1", "t@t.com", "viewer", ContextoGrupo)
+	token, _ := jwtSvc.Generate("u1", "g1", "t@t.com", "viewer", ContextoGrupo, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/me", nil)
 	req.Header.Set("Authorization", "Bearer "+token)

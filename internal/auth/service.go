@@ -23,6 +23,7 @@ type Service interface {
 	Logout(ctx context.Context, refreshToken string) error
 	Refresh(ctx context.Context, refreshToken string) (*LoginResponse, error)
 	Me(ctx context.Context, userID string) (*MeResponse, error)
+	TrocarSenhaPropria(ctx context.Context, userID string, contexto Contexto, grupoID string, req TrocaSenhaRequest) (*LoginResponse, error)
 }
 
 type service struct {
@@ -96,7 +97,7 @@ func (s *service) emitirNoContexto(ctx context.Context, usuario *Usuario, contex
 	if err != nil {
 		return nil, err
 	}
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, role, contexto)
+	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, role, contexto, usuario.SenhaProvisoria)
 }
 
 func (s *service) SelectGrupo(ctx context.Context, preAuthToken string, contexto Contexto, grupoID string) (*LoginResponse, error) {
@@ -172,8 +173,8 @@ func (s *service) papelNoGrupo(ctx context.Context, usuario *Usuario, grupoID st
 	return role
 }
 
-func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role string, contexto Contexto) (*LoginResponse, error) {
-	accessToken, err := s.jwt.Generate(userID, grupoID, email, role, contexto)
+func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role string, contexto Contexto, senhaProvisoria bool) (*LoginResponse, error) {
+	accessToken, err := s.jwt.Generate(userID, grupoID, email, role, contexto, senhaProvisoria)
 	if err != nil {
 		return nil, fmt.Errorf("auth.service.issueTokens gerar access token: %w", err)
 	}
@@ -196,6 +197,9 @@ func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role 
 		ExpiresIn:    int(15 * time.Minute / time.Second),
 		Contexto:     contexto,
 		GrupoID:      grupoID,
+		// A tela precisa saber logo na resposta do login: a troca vem antes de
+		// qualquer outra coisa.
+		SenhaProvisoria: senhaProvisoria,
 	}, nil
 }
 
@@ -272,12 +276,66 @@ func (s *service) Me(ctx context.Context, userID string) (*MeResponse, error) {
 		return nil, fmt.Errorf("auth.service.Me: %w", err)
 	}
 	return &MeResponse{
-		ID:      usuario.ID,
-		GrupoID: usuario.GrupoID,
-		Nome:    usuario.Nome,
-		Email:   usuario.Email,
-		Role:    usuario.Role,
+		ID:              usuario.ID,
+		GrupoID:         usuario.GrupoID,
+		Nome:            usuario.Nome,
+		Email:           usuario.Email,
+		Role:            usuario.Role,
+		SenhaProvisoria: usuario.SenhaProvisoria,
 	}, nil
+}
+
+/*
+TrocarSenhaPropria: a pessoa troca a propria senha, provando a atual.
+
+Nao existia. A tela de Perfil chamava o endpoint ADMINISTRATIVO
+(/admin/grupos/{id}/usuarios/{id}/password), que exige papel de admin — e por
+isso **um viewer nao conseguia trocar a propria senha**: recebia 403 numa tela
+feita para ele. Um admin de grupo conseguia, mas pelo caminho errado: sem provar
+a senha atual, entao um token roubado bastava para tomar a conta.
+
+A senha atual e exigida sempre, inclusive quando a atual e provisoria — quem
+acabou de entrar com ela a conhece, e abrir excecao aqui seria criar um caminho
+de troca sem prova.
+
+Devolve tokens novos: a senha mudou, e as sessoes antigas sao revogadas logo
+abaixo. Sem isso a pessoa trocaria a senha e seria deslogada em seguida pela
+propria troca.
+*/
+func (s *service) TrocarSenhaPropria(ctx context.Context, userID string, contexto Contexto, grupoID string, req TrocaSenhaRequest) (*LoginResponse, error) {
+	if len(req.SenhaNova) < 8 {
+		return nil, apperror.Unprocessable("a senha nova deve ter no mínimo 8 caracteres")
+	}
+	if req.SenhaNova == req.SenhaAtual {
+		return nil, apperror.Unprocessable("a senha nova precisa ser diferente da atual")
+	}
+
+	usuario, err := s.repo.GetUsuarioByID(ctx, userID)
+	if err != nil {
+		return nil, apperror.Unauthorized("usuário não encontrado")
+	}
+	if bcrypt.CompareHashAndPassword([]byte(usuario.Password), []byte(req.SenhaAtual)) != nil {
+		return nil, apperror.Unauthorized("senha atual incorreta")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.SenhaNova), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("auth.service.TrocarSenhaPropria hash: %w", err)
+	}
+	if err := s.repo.UpdateSenhaPropria(ctx, userID, string(hash)); err != nil {
+		return nil, fmt.Errorf("auth.service.TrocarSenhaPropria: %w", err)
+	}
+
+	// Trocar a senha derruba as outras sessoes — inclusive a de quem tinha a
+	// senha antiga, que e o caso que importa quando ela vazou.
+	if err := s.repo.RevokeAllUserTokens(ctx, userID); err != nil {
+		return nil, fmt.Errorf("auth.service.TrocarSenhaPropria revogar sessões: %w", err)
+	}
+
+	usuario.SenhaProvisoria = false
+	// O contexto e o grupo vem das claims do token atual: trocar a senha nao
+	// e motivo para mudar onde a pessoa esta.
+	return s.emitirNoContexto(ctx, usuario, contexto, grupoID)
 }
 
 func generateOpaqueToken() (string, error) {

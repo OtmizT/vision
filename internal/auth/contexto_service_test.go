@@ -34,6 +34,8 @@ func (r *repoContexto) InsertRefreshToken(_ context.Context, _, token string, ex
 	return &RefreshToken{Token: token, ExpiresAt: exp, GrupoID: grupoID, Contexto: c}, nil
 }
 
+func (r *repoContexto) UpdateSenhaPropria(_ context.Context, _, _ string) error { return nil }
+
 func (r *repoContexto) GetRefreshToken(_ context.Context, _ string) (*RefreshToken, error) {
 	if r.rt == nil {
 		return nil, errors.New("não encontrado")
@@ -270,7 +272,7 @@ contexto implícito.
 func TestJWT_TokenSemContextoERecusado(t *testing.T) {
 	svc := NewJWTService(testSecret)
 
-	semCtx, err := svc.Generate("u-1", gA, "t@e.com", RoleViewer, Contexto(""))
+	semCtx, err := svc.Generate("u-1", gA, "t@e.com", RoleViewer, Contexto(""), false)
 	if err != nil {
 		t.Fatalf("%v", err)
 	}
@@ -278,13 +280,13 @@ func TestJWT_TokenSemContextoERecusado(t *testing.T) {
 		t.Fatal("token sem contexto foi aceito")
 	}
 
-	invalido, _ := svc.Generate("u-1", gA, "t@e.com", RoleViewer, Contexto("qualquer"))
+	invalido, _ := svc.Generate("u-1", gA, "t@e.com", RoleViewer, Contexto("qualquer"), false)
 	if _, err := svc.Validate(invalido); err == nil {
 		t.Fatal("contexto desconhecido foi aceito")
 	}
 
 	for _, c := range []Contexto{ContextoPlataforma, ContextoGrupo} {
-		tok, _ := svc.Generate("u-1", gA, "t@e.com", RoleViewer, c)
+		tok, _ := svc.Generate("u-1", gA, "t@e.com", RoleViewer, c, false)
 		claims, err := svc.Validate(tok)
 		if err != nil {
 			t.Fatalf("contexto %q deveria ser aceito: %v", c, err)

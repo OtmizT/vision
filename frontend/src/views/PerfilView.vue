@@ -23,6 +23,7 @@
     <div class="card" style="padding:24px;margin-bottom:16px">
       <p style="font-weight:700;font-size: var(--fs-base);margin-bottom:16px">Alterar Senha</p>
       <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="field"><label>SENHA ATUAL</label><input v-model="pw.atual" type="password" class="input-el" placeholder="Sua senha de hoje" /></div>
         <div class="field"><label>NOVA SENHA</label><input v-model="pw.p1" type="password" class="input-el" placeholder="Minimo 8 caracteres" /></div>
         <div class="field"><label>CONFIRMAR SENHA</label><input v-model="pw.p2" type="password" class="input-el" placeholder="Repita a senha" /></div>
         <p v-if="pwErr" style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)">{{ pwErr }}</p>
@@ -51,17 +52,25 @@ import { useUiStore } from "@/stores/ui"
 import api from "@/api/client"
 const auth = useAuthStore(); const ui = useUiStore(); const router = useRouter()
 const initials = computed(() => (auth.user?.nome ?? "").split(" ").map((w:string)=>w[0]).slice(0,2).join("").toUpperCase())
-const pw = ref({ p1:"", p2:"" }); const pwErr=ref(""); const pwOk=ref(false); const savingPw=ref(false)
+const pw = ref({ atual:"", p1:"", p2:"" }); const pwErr=ref(""); const pwOk=ref(false); const savingPw=ref(false)
 const confirmLogout = ref(false)
+/*
+ * Troca a propria senha pelo endpoint proprio, provando a senha atual.
+ *
+ * Esta tela chamava o endpoint ADMINISTRATIVO
+ * (/admin/grupos/{id}/usuarios/{id}/password), que exige papel de admin — e por
+ * isso um viewer recebia 403 numa tela feita para ele. Um admin conseguia, mas
+ * sem provar a senha atual: um token roubado bastava para tomar a conta.
+ */
 async function savePwd() {
   pwErr.value=""; pwOk.value=false
+  if(!pw.value.atual){pwErr.value="Informe a senha atual";return}
   if(pw.value.p1.length<8){pwErr.value="Minimo 8 caracteres";return}
   if(pw.value.p1!==pw.value.p2){pwErr.value="Senhas nao conferem";return}
   savingPw.value=true
   try {
-    const grupoId = auth.user?.grupo_id
-    await api.put(`/admin/grupos/${grupoId}/usuarios/${auth.user?.id}/password`,{password:pw.value.p1})
-    pw.value={p1:"",p2:""}; pwOk.value=true
+    await auth.trocarSenha(pw.value.atual, pw.value.p1)
+    pw.value={atual:"",p1:"",p2:""}; pwOk.value=true
   } catch(e:any){pwErr.value=e?.response?.data?.message??"Erro"} finally{savingPw.value=false}
 }
 async function logout() {

@@ -30,8 +30,10 @@ WHERE id = $1
 RETURNING id, grupo_id, nome, email, role, ativo, created_at, updated_at;
 
 -- name: UpdateUsuarioPassword :exec
+-- Senha definida por administrador nasce provisoria: quem definiu conhece a
+-- senha da pessoa, e o primeiro acesso obriga a troca.
 UPDATE _etl.usuarios
-SET password = $2, updated_at = NOW()
+SET password = $2, senha_provisoria = true, updated_at = NOW()
 WHERE id = $1;
 
 -- name: SoftDeleteUsuario :exec

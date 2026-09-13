@@ -72,7 +72,8 @@ async function submit() {
   try {
     await auth.login(email.value, password.value)
     // Nem todo papel tem Dashboard; '/' mandaria o admin global para um 403.
-    router.push(rotaInicial(auth.contexto))
+    // Senha definida por administrador: a troca vem antes de qualquer tela.
+    router.push(auth.senhaProvisoria ? '/trocar-senha' : rotaInicial(auth.contexto))
   } catch (e: any) {
     const msg = e?.response?.data?.message
     errorMsg.value = msg === 'credenciais inválidas'

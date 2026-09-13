@@ -18,6 +18,20 @@ const router = createRouter({
       component: () => import('@/views/SelectGrupoView.vue'),
       meta: { selectGrupo: true }
     },
+    /*
+     * Troca obrigatoria de senha provisoria.
+     *
+     * Fora do MainLayout de proposito: a pessoa esta autenticada, mas o servidor
+     * so responde /auth/senha, /auth/me, /auth/logout e /auth/refresh enquanto a
+     * senha for provisoria. Montar o menu aqui seria oferecer telas que todas
+     * devolveriam 403.
+     */
+    {
+      path: '/trocar-senha',
+      name: 'TrocarSenha',
+      component: () => import('@/views/TrocarSenhaView.vue'),
+      meta: { trocaSenha: true }
+    },
 
     // ── Autenticado ──────────────────────────────────────────
     {
@@ -133,6 +147,23 @@ const router = createRouter({
 // ── Guards ──────────────────────────────────────────────────
 router.beforeEach(async to => {
   const auth = useAuthStore()
+
+  /*
+   * Senha provisoria bloqueia tudo, menos a propria troca.
+   *
+   * A trava de verdade esta no servidor — aqui e so para a pessoa nao bater de
+   * frente num 403 em toda tela. Por isso a checagem vem ANTES de qualquer
+   * outra decisao de rota: nao adianta mandar para o Dashboard primeiro.
+   */
+  if (to.meta.trocaSenha) {
+    if (!auth.isAuthenticated) return { name: 'Login' }
+    if (auth.user && !auth.senhaProvisoria) return rotaInicial(auth.contexto)
+    return true
+  }
+  if (auth.isAuthenticated && !to.meta.public) {
+    if (!auth.user) await auth.ensureLoaded()
+    if (auth.senhaProvisoria) return { name: 'TrocarSenha' }
+  }
 
   // Rota de seleção de grupo
   if (to.meta.selectGrupo) {

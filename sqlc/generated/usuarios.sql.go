@@ -363,7 +363,7 @@ func (q *Queries) UpdateUsuario(ctx context.Context, arg UpdateUsuarioParams) (U
 
 const updateUsuarioPassword = `-- name: UpdateUsuarioPassword :exec
 UPDATE _etl.usuarios
-SET password = $2, updated_at = NOW()
+SET password = $2, senha_provisoria = true, updated_at = NOW()
 WHERE id = $1
 `
 
@@ -372,6 +372,8 @@ type UpdateUsuarioPasswordParams struct {
 	Password string      `json:"password"`
 }
 
+// Senha definida por administrador nasce provisoria: quem definiu conhece a
+// senha da pessoa, e o primeiro acesso obriga a troca.
 func (q *Queries) UpdateUsuarioPassword(ctx context.Context, arg UpdateUsuarioPasswordParams) error {
 	_, err := q.db.Exec(ctx, updateUsuarioPassword, arg.ID, arg.Password)
 	return err

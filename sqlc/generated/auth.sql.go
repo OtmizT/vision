@@ -77,22 +77,23 @@ func (q *Queries) GetRefreshToken(ctx context.Context, token string) (EtlRefresh
 }
 
 const getUsuarioByEmail = `-- name: GetUsuarioByEmail :one
-SELECT id, grupo_id, nome, email, password, role, ativo, created_at, updated_at
+SELECT id, grupo_id, nome, email, password, role, ativo, senha_provisoria, created_at, updated_at
 FROM _etl.usuarios
 WHERE email = $1
   AND deleted_at IS NULL
 `
 
 type GetUsuarioByEmailRow struct {
-	ID        pgtype.UUID        `json:"id"`
-	GrupoID   pgtype.UUID        `json:"grupo_id"`
-	Nome      string             `json:"nome"`
-	Email     string             `json:"email"`
-	Password  string             `json:"password"`
-	Role      string             `json:"role"`
-	Ativo     bool               `json:"ativo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	ID              pgtype.UUID        `json:"id"`
+	GrupoID         pgtype.UUID        `json:"grupo_id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	Password        string             `json:"password"`
+	Role            string             `json:"role"`
+	Ativo           bool               `json:"ativo"`
+	SenhaProvisoria bool               `json:"senha_provisoria"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) GetUsuarioByEmail(ctx context.Context, email string) (GetUsuarioByEmailRow, error) {
@@ -106,6 +107,7 @@ func (q *Queries) GetUsuarioByEmail(ctx context.Context, email string) (GetUsuar
 		&i.Password,
 		&i.Role,
 		&i.Ativo,
+		&i.SenhaProvisoria,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -113,22 +115,23 @@ func (q *Queries) GetUsuarioByEmail(ctx context.Context, email string) (GetUsuar
 }
 
 const getUsuarioByID = `-- name: GetUsuarioByID :one
-SELECT id, grupo_id, nome, email, password, role, ativo, created_at, updated_at
+SELECT id, grupo_id, nome, email, password, role, ativo, senha_provisoria, created_at, updated_at
 FROM _etl.usuarios
 WHERE id = $1
   AND deleted_at IS NULL
 `
 
 type GetUsuarioByIDRow struct {
-	ID        pgtype.UUID        `json:"id"`
-	GrupoID   pgtype.UUID        `json:"grupo_id"`
-	Nome      string             `json:"nome"`
-	Email     string             `json:"email"`
-	Password  string             `json:"password"`
-	Role      string             `json:"role"`
-	Ativo     bool               `json:"ativo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	ID              pgtype.UUID        `json:"id"`
+	GrupoID         pgtype.UUID        `json:"grupo_id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	Password        string             `json:"password"`
+	Role            string             `json:"role"`
+	Ativo           bool               `json:"ativo"`
+	SenhaProvisoria bool               `json:"senha_provisoria"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 func (q *Queries) GetUsuarioByID(ctx context.Context, id pgtype.UUID) (GetUsuarioByIDRow, error) {
@@ -142,6 +145,7 @@ func (q *Queries) GetUsuarioByID(ctx context.Context, id pgtype.UUID) (GetUsuari
 		&i.Password,
 		&i.Role,
 		&i.Ativo,
+		&i.SenhaProvisoria,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -203,6 +207,24 @@ WHERE token = $1
 
 func (q *Queries) RevokeRefreshToken(ctx context.Context, token string) error {
 	_, err := q.db.Exec(ctx, revokeRefreshToken, token)
+	return err
+}
+
+const updateSenhaPropria = `-- name: UpdateSenhaPropria :exec
+UPDATE _etl.usuarios
+SET password = $2, senha_provisoria = false, updated_at = NOW()
+WHERE id = $1
+  AND deleted_at IS NULL
+`
+
+type UpdateSenhaPropriaParams struct {
+	ID       pgtype.UUID `json:"id"`
+	Password string      `json:"password"`
+}
+
+// Troca feita pelo proprio usuario: a senha deixa de ser provisoria.
+func (q *Queries) UpdateSenhaPropria(ctx context.Context, arg UpdateSenhaPropriaParams) error {
+	_, err := q.db.Exec(ctx, updateSenhaPropria, arg.ID, arg.Password)
 	return err
 }
 

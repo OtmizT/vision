@@ -35,6 +35,10 @@ func (h *Handler) Routes() http.Handler {
 	r.With(RequireAuth(h.jwtSvc)).Get("/me", h.Me)
 	r.With(RequireAuth(h.jwtSvc)).Get("/grupos", h.Grupos)
 	r.With(RequireAuth(h.jwtSvc)).Get("/contextos", h.Contextos)
+	// Troca da propria senha, exigindo a atual. A tela de Perfil chamava o
+	// endpoint administrativo, e por isso um viewer recebia 403 ao tentar
+	// trocar a propria senha.
+	r.With(RequireAuth(h.jwtSvc), httprate.LimitByIP(10, 1*time.Minute)).Put("/senha", h.TrocarSenha)
 	r.With(RequireAuth(h.jwtSvc)).Post("/troca-grupo", h.TrocaGrupo)
 
 	return r
@@ -212,6 +216,37 @@ func (h *Handler) Contextos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	response.OK(w, ctxs)
+}
+
+// PUT /auth/senha
+func (h *Handler) TrocarSenha(w http.ResponseWriter, r *http.Request) {
+	claims, ok := ClaimsFromContext(r.Context())
+	if !ok {
+		response.Unauthorized(w, "não autenticado")
+		return
+	}
+
+	var req TrocaSenhaRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusUnprocessableEntity, "body inválido", err)
+		return
+	}
+	if req.SenhaAtual == "" || req.SenhaNova == "" {
+		response.Error(w, http.StatusUnprocessableEntity, "senha_atual e senha_nova são obrigatórias", nil)
+		return
+	}
+
+	resp, err := h.svc.TrocarSenhaPropria(r.Context(), claims.UserID, claims.Contexto, claims.GrupoID, req)
+	if err != nil {
+		if ae, ok := apperror.IsAppError(err); ok {
+			response.FromAppError(w, ae)
+			return
+		}
+		response.Error(w, http.StatusInternalServerError, "erro ao trocar senha", err)
+		return
+	}
+
+	response.OK(w, resp)
 }
 
 // GET /auth/me

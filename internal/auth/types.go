@@ -3,15 +3,18 @@ package auth
 import "time"
 
 type Usuario struct {
-	ID        string
-	GrupoID   string
-	Nome      string
-	Email     string
-	Password  string
-	Role      string
-	Ativo     bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID       string
+	GrupoID  string
+	Nome     string
+	Email    string
+	Password string
+	Role     string
+	Ativo    bool
+	// SenhaProvisoria: a senha atual foi definida por um administrador e precisa
+	// ser trocada no primeiro acesso.
+	SenhaProvisoria bool
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 type RefreshToken struct {
@@ -56,6 +59,9 @@ type LoginResponse struct {
 	// para montar menu e badge sem redecidir a regra por conta própria.
 	Contexto Contexto `json:"contexto,omitempty"`
 	GrupoID  string   `json:"grupo_id,omitempty"`
+	// SenhaProvisoria: a tela precisa obrigar a troca antes de qualquer outra
+	// coisa. A trava de verdade esta na claim do token — ver RequireAuth.
+	SenhaProvisoria bool `json:"senha_provisoria,omitempty"`
 
 	// Cenário 2 — seleção de contexto pendente
 	NeedsSelect  bool        `json:"needs_select,omitempty"`
@@ -90,6 +96,11 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type TrocaSenhaRequest struct {
+	SenhaAtual string `json:"senha_atual"`
+	SenhaNova  string `json:"senha_nova"`
+}
+
 type MeResponse struct {
 	ID       string   `json:"id"`
 	GrupoID  string   `json:"grupo_id"`
@@ -97,4 +108,7 @@ type MeResponse struct {
 	Email    string   `json:"email"`
 	Role     string   `json:"role"`
 	Contexto Contexto `json:"contexto"`
+	// SenhaProvisoria manda a tela obrigar a troca antes de qualquer outra
+	// coisa. Vem também na claim do token, que é onde a regra é imposta.
+	SenhaProvisoria bool `json:"senha_provisoria"`
 }

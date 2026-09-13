@@ -23,6 +23,8 @@ type Repository interface {
 	GetGruposByUsuarioID(ctx context.Context, usuarioID string) ([]GrupoInfo, error)
 	ValidateUsuarioGrupo(ctx context.Context, usuarioID, grupoID string) (bool, error)
 	GetRoleNoGrupo(ctx context.Context, usuarioID, grupoID string) (string, error)
+	// UpdateSenhaPropria grava a senha nova e limpa a marca de provisória.
+	UpdateSenhaPropria(ctx context.Context, usuarioID, passwordHash string) error
 }
 
 type repository struct {
@@ -39,7 +41,7 @@ func (r *repository) GetUsuarioByEmail(ctx context.Context, email string) (*Usua
 	if err != nil {
 		return nil, fmt.Errorf("auth.repository.GetUsuarioByEmail: %w", err)
 	}
-	return rowToUsuario(row.ID, row.GrupoID, row.Nome, row.Email, row.Password, row.Role, row.Ativo, row.CreatedAt, row.UpdatedAt), nil
+	return rowToUsuario(row.ID, row.GrupoID, row.Nome, row.Email, row.Password, row.Role, row.Ativo, row.SenhaProvisoria, row.CreatedAt, row.UpdatedAt), nil
 }
 
 func (r *repository) GetUsuarioByID(ctx context.Context, id string) (*Usuario, error) {
@@ -52,7 +54,7 @@ func (r *repository) GetUsuarioByID(ctx context.Context, id string) (*Usuario, e
 	if err != nil {
 		return nil, fmt.Errorf("auth.repository.GetUsuarioByID: %w", err)
 	}
-	return rowToUsuario(row.ID, row.GrupoID, row.Nome, row.Email, row.Password, row.Role, row.Ativo, row.CreatedAt, row.UpdatedAt), nil
+	return rowToUsuario(row.ID, row.GrupoID, row.Nome, row.Email, row.Password, row.Role, row.Ativo, row.SenhaProvisoria, row.CreatedAt, row.UpdatedAt), nil
 }
 
 // InsertRefreshToken grava o refresh token junto com o grupo ativo e o contexto
@@ -93,6 +95,18 @@ func (r *repository) InsertRefreshToken(ctx context.Context, usuarioID, token st
 		GrupoID:   uuidToStr(row.GrupoID),
 		Contexto:  Contexto(row.Contexto),
 	}, nil
+}
+
+func (r *repository) UpdateSenhaPropria(ctx context.Context, usuarioID, passwordHash string) error {
+	q := sqlcgen.New(r.pool)
+	var uid pgtype.UUID
+	if err := uid.Scan(usuarioID); err != nil {
+		return fmt.Errorf("auth.repository.UpdateSenhaPropria scan uuid: %w", err)
+	}
+	if err := q.UpdateSenhaPropria(ctx, sqlcgen.UpdateSenhaPropriaParams{ID: uid, Password: passwordHash}); err != nil {
+		return fmt.Errorf("auth.repository.UpdateSenhaPropria: %w", err)
+	}
+	return nil
 }
 
 func (r *repository) GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error) {
@@ -221,17 +235,18 @@ func (r *repository) GetRoleNoGrupo(ctx context.Context, usuarioID, grupoID stri
 
 // --- helpers ---
 
-func rowToUsuario(id, grupoID pgtype.UUID, nome, email, password, role string, ativo bool, createdAt, updatedAt pgtype.Timestamptz) *Usuario {
+func rowToUsuario(id, grupoID pgtype.UUID, nome, email, password, role string, ativo, senhaProvisoria bool, createdAt, updatedAt pgtype.Timestamptz) *Usuario {
 	return &Usuario{
-		ID:        uuidToStr(id),
-		GrupoID:   uuidToStr(grupoID),
-		Nome:      nome,
-		Email:     email,
-		Password:  password,
-		Role:      role,
-		Ativo:     ativo,
-		CreatedAt: createdAt.Time,
-		UpdatedAt: updatedAt.Time,
+		ID:              uuidToStr(id),
+		GrupoID:         uuidToStr(grupoID),
+		Nome:            nome,
+		Email:           email,
+		Password:        password,
+		Role:            role,
+		Ativo:           ativo,
+		SenhaProvisoria: senhaProvisoria,
+		CreatedAt:       createdAt.Time,
+		UpdatedAt:       updatedAt.Time,
 	}
 }
 

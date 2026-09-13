@@ -15,6 +15,32 @@ type ctxKey string
 
 const CtxKeyUserClaims ctxKey = "user_claims"
 
+/*
+rotasComSenhaProvisoria: o que ainda funciona enquanto a senha e provisoria.
+
+Uma senha definida por administrador precisa ser trocada ANTES de qualquer outra
+coisa — nao "assim que der". Obrigar isso so na tela seria teatro: bastaria
+chamar a API direto para seguir usando a conta com a senha que outra pessoa
+conhece.
+
+A lista e minima e existe por um motivo cada:
+
+	/auth/senha    o proprio caminho da troca;
+	/auth/me       a tela precisa saber quem e para montar a tela de troca;
+	/auth/logout   desistir e sair nao pode ficar bloqueado;
+	/auth/refresh  a troca pode demorar mais que os 15 minutos do token.
+*/
+var rotasComSenhaProvisoria = map[string]bool{
+	"/auth/senha":   true,
+	"/auth/me":      true,
+	"/auth/logout":  true,
+	"/auth/refresh": true,
+}
+
+func bloqueadoPorSenhaProvisoria(claims *JWTClaims, path string) bool {
+	return claims.SenhaProvisoria && !rotasComSenhaProvisoria[path]
+}
+
 // RequireAuth valida o Bearer token e injeta as claims no contexto.
 // Aceita apenas o header Authorization: Bearer <token>.
 func RequireAuth(jwtSvc JWTService) func(http.Handler) http.Handler {
@@ -35,6 +61,11 @@ func RequireAuth(jwtSvc JWTService) func(http.Handler) http.Handler {
 			// Registra quem é, para a auditoria. O middleware de auditoria roda
 			// antes deste e não tem como saber — ver audit/ator.go.
 			audit.AtorFromContext(r.Context()).Registrar(claims.UserID, claims.Email, claims.Role)
+
+			if bloqueadoPorSenhaProvisoria(claims, r.URL.Path) {
+				response.Forbidden(w, "troque a senha provisória antes de continuar")
+				return
+			}
 
 			ctx := context.WithValue(r.Context(), CtxKeyUserClaims, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -66,6 +97,13 @@ func RequireAuthSSE(jwtSvc JWTService) func(http.Handler) http.Handler {
 			// Registra quem é, para a auditoria. O middleware de auditoria roda
 			// antes deste e não tem como saber — ver audit/ator.go.
 			audit.AtorFromContext(r.Context()).Registrar(claims.UserID, claims.Email, claims.Role)
+
+			// Vale para o SSE também: um stream aberto é acesso como qualquer
+			// outro, e ficaria fora da trava se a checagem morasse só acima.
+			if bloqueadoPorSenhaProvisoria(claims, r.URL.Path) {
+				response.Forbidden(w, "troque a senha provisória antes de continuar")
+				return
+			}
 
 			ctx := context.WithValue(r.Context(), CtxKeyUserClaims, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))

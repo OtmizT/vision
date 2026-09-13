@@ -41,6 +41,8 @@ func (m *mockRepo) InsertRefreshToken(_ context.Context, _, token string, exp ti
 	return &RefreshToken{Token: token, ExpiresAt: exp}, nil
 }
 
+func (m *mockRepo) UpdateSenhaPropria(_ context.Context, _, _ string) error { return nil }
+
 func (m *mockRepo) GetRefreshToken(_ context.Context, token string) (*RefreshToken, error) {
 	if m.refreshToken == nil {
 		return nil, errors.New("não encontrado")

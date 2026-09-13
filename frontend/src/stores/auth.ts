@@ -10,6 +10,13 @@ export interface User {
   email:    string
   role:     'admin_global' | 'admin_grupo' | 'viewer'
   /*
+   * A senha atual foi definida por um administrador e precisa ser trocada antes
+   * de qualquer outra coisa. A trava real esta no servidor — enquanto isto for
+   * true, so /auth/senha, /auth/me, /auth/logout e /auth/refresh respondem.
+   * Aqui ela so evita mandar a pessoa para telas que dariam 403.
+   */
+  senha_provisoria?: boolean
+  /*
    * Onde a pessoa está: administrando a plataforma ou dentro de um cliente.
    *
    * Vem do JWT, via /auth/me, e não do banco — o papel gravado em usuarios.role
@@ -40,6 +47,8 @@ export const useAuthStore = defineStore('auth', () => {
   // e /auth/contextos respondem), e não de um `role === 'admin_global'` aqui:
   // a lista de destinos é decidida num lugar só.
   const podePlataforma = ref(localStorage.getItem('pode_plataforma') === '1')
+
+  const senhaProvisoria = computed(() => !!user.value?.senha_provisoria)
 
   const isAuthenticated  = computed(() => !!accessToken.value)
   const needsGroupSelect = computed(() => !!preAuthToken.value && !accessToken.value)
@@ -126,6 +135,27 @@ export const useAuthStore = defineStore('auth', () => {
   const selectGrupo = (grupoID: string) => selectContexto('grupo', grupoID)
   const trocaGrupo  = (grupoID: string) => trocaContexto('grupo', grupoID)
 
+  /*
+   * Troca da propria senha, provando a atual.
+   *
+   * Endpoint proprio, e nao o administrativo que a tela de Perfil usava: aquele
+   * exige papel de admin, e por isso um viewer recebia 403 ao tentar trocar a
+   * propria senha. O servidor devolve sessao nova, porque a troca derruba as
+   * antigas — sem isso a pessoa trocaria a senha e seria deslogada em seguida.
+   */
+  async function trocarSenha(senhaAtual: string, senhaNova: string) {
+    const { data } = await api.put('/auth/senha', {
+      senha_atual: senhaAtual,
+      senha_nova: senhaNova
+    })
+    setTokens(data.data.access_token, data.data.refresh_token)
+    await fetchMe()
+    // Tambem os grupos: quem chega pela troca obrigatoria nunca passou por uma
+    // tela que os carregasse, e sem eles o badge do contexto cai no generico
+    // "Grupo" em vez do nome do cliente.
+    await refreshMeusGrupos()
+  }
+
   /** Destinos possíveis para a tela de troca de contexto. */
   async function fetchContextos(): Promise<{ pode_plataforma: boolean; grupos: GrupoInfo[] }> {
     const { data } = await api.get('/auth/contextos')
@@ -207,9 +237,9 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     accessToken, refreshToken, user, preAuthToken, pendingGrupos, meusGrupos, podePlataforma,
     isAuthenticated, needsGroupSelect, isAdminGlobal, isAdminGrupo, isViewer, isAdmin,
-    contexto, noContextoPlataforma, nomeGrupoAtivo,
+    contexto, noContextoPlataforma, nomeGrupoAtivo, senhaProvisoria,
     login, selectGrupo, trocaGrupo, selectContexto, trocaContexto,
     fetchGrupos, fetchContextos, refreshMeusGrupos,
-    logout, refresh, fetchMe, init, ensureLoaded, clearTokens, setTokens
+    logout, refresh, fetchMe, trocarSenha, init, ensureLoaded, clearTokens, setTokens
   }
 })

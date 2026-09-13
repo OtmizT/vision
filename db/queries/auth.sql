@@ -1,11 +1,11 @@
 -- name: GetUsuarioByEmail :one
-SELECT id, grupo_id, nome, email, password, role, ativo, created_at, updated_at
+SELECT id, grupo_id, nome, email, password, role, ativo, senha_provisoria, created_at, updated_at
 FROM _etl.usuarios
 WHERE email = $1
   AND deleted_at IS NULL;
 
 -- name: GetUsuarioByID :one
-SELECT id, grupo_id, nome, email, password, role, ativo, created_at, updated_at
+SELECT id, grupo_id, nome, email, password, role, ativo, senha_provisoria, created_at, updated_at
 FROM _etl.usuarios
 WHERE id = $1
   AND deleted_at IS NULL;
@@ -45,3 +45,10 @@ SELECT COUNT(*) > 0 AS pertence
 FROM _etl.usuario_grupos
 WHERE usuario_id = $1
   AND grupo_id = $2;
+
+-- name: UpdateSenhaPropria :exec
+-- Troca feita pelo proprio usuario: a senha deixa de ser provisoria.
+UPDATE _etl.usuarios
+SET password = $2, senha_provisoria = false, updated_at = NOW()
+WHERE id = $1
+  AND deleted_at IS NULL;

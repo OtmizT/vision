@@ -176,16 +176,17 @@ type EtlSyncJobProgress struct {
 }
 
 type EtlUsuario struct {
-	ID        pgtype.UUID        `json:"id"`
-	GrupoID   pgtype.UUID        `json:"grupo_id"`
-	Nome      string             `json:"nome"`
-	Email     string             `json:"email"`
-	Password  string             `json:"password"`
-	Role      string             `json:"role"`
-	Ativo     bool               `json:"ativo"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+	ID              pgtype.UUID        `json:"id"`
+	GrupoID         pgtype.UUID        `json:"grupo_id"`
+	Nome            string             `json:"nome"`
+	Email           string             `json:"email"`
+	Password        string             `json:"password"`
+	Role            string             `json:"role"`
+	Ativo           bool               `json:"ativo"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	SenhaProvisoria bool               `json:"senha_provisoria"`
 }
 
 type EtlUsuarioGrupo struct {
