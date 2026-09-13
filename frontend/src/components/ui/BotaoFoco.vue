@@ -44,7 +44,7 @@ const ativo = computed(() => ui.emFoco(props.id))
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 7px;
   padding: 4px 9px;
-  font-family: var(--font-display); font-size: var(--fs-xs);
+  font-family: var(--font-mono); font-size: var(--fs-xs);
   cursor: pointer; transition: var(--transition); white-space: nowrap;
 }
 .bfoco:hover { border-color: var(--primary); color: var(--primary); }

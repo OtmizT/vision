@@ -370,7 +370,7 @@ watch(() => [props.grupoId, props.filtros], carregar, { deep: true, immediate: t
 
 .pv-state {
   padding: 48px; text-align: center;
-  font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim);
+  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim);
   display: flex; align-items: center; justify-content: center; gap: 10px;
 }
 .pv-state--erro { color: var(--danger); }
@@ -379,14 +379,14 @@ watch(() => [props.grupoId, props.filtros], carregar, { deep: true, immediate: t
 .pv-btn {
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 7px;
-  padding: 5px 11px; font-family: var(--font-display); font-size: var(--fs-xs);
+  padding: 5px 11px; font-family: var(--font-mono); font-size: var(--fs-xs);
   letter-spacing: 0.5px; cursor: pointer; transition: var(--transition);
 }
 .pv-btn:hover { border-color: var(--primary); color: var(--primary); }
 
 .pv-legenda {
   margin-left: auto; display: flex; align-items: center; gap: 6px;
-  font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim);
+  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim);
 }
 .pv-chip-prev {
   width: 10px; height: 10px; border-radius: 3px;
@@ -428,7 +428,7 @@ watch(() => [props.grupoId, props.filtros], carregar, { deep: true, immediate: t
 .pv-table th {
   position: sticky; top: 0; z-index: 2;
   background: var(--surface);
-  font-family: var(--font-display); font-size: var(--fs-xs); letter-spacing: 1px;
+  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 1px;
   color: var(--text-dim); font-weight: 600;
   padding: 10px 12px; border-bottom: 1px solid var(--border-strong);
   white-space: nowrap;
@@ -466,7 +466,7 @@ watch(() => [props.grupoId, props.filtros], carregar, { deep: true, immediate: t
 }
 .pv-td-num, .pv-td-total {
   padding: 7px 12px; text-align: right;
-  font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-muted);
+  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-muted);
   white-space: nowrap;
 }
 .pv-td-total { border-left: 1px solid var(--border); font-weight: 600; color: var(--text); }
@@ -511,7 +511,7 @@ watch(() => [props.grupoId, props.filtros], carregar, { deep: true, immediate: t
   width: 16px; height: 16px; flex-shrink: 0;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 4px;
-  color: var(--text-muted); font-family: var(--font-display); font-size: var(--fs-xs); line-height: 1;
+  color: var(--text-muted); font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1;
   cursor: pointer; transition: var(--transition); padding: 0;
 }
 .pv-toggle:hover { border-color: var(--primary); color: var(--primary); }
@@ -523,7 +523,7 @@ watch(() => [props.grupoId, props.filtros], carregar, { deep: true, immediate: t
   position: sticky; bottom: 0;
   background: var(--surface); border-top: 1px solid var(--border-strong);
   font-weight: 700; color: var(--text);
-  font-family: var(--font-display); font-size: var(--fs-xs); padding: 10px 12px;
+  font-family: var(--font-mono); font-size: var(--fs-xs); padding: 10px 12px;
 }
 .pv-tfoot .pv-td-dim { font-size: var(--fs-xs); letter-spacing: 1px; }
 .pv-nota {

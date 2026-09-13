@@ -68,6 +68,10 @@ export function coresGrafico(raiz?: Element): CoresGrafico {
     tooltipFundo: token('--surface-2',    '#131c2b', raiz),
     tooltipBorda: token('--border-strong','rgba(255,255,255,0.12)', raiz),
     tooltipTexto: token('--text',         '#e2eaf4', raiz),
-    fonte:        token('--font-display', 'Space Grotesk, sans-serif', raiz),
+    // Texto DENTRO do canvas — rótulos de eixo e datalabels. Vai na fonte de
+    // corpo, e não na de apoio: é o texto que dá leitura ao gráfico. A legenda
+    // renderizada em HTML ao lado do gráfico segue em --font-mono, junto com os
+    // outros rótulos de apoio.
+    fonte: token('--font-body', 'Geist Variable, system-ui, sans-serif', raiz),
   }
 }

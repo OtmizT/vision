@@ -21,14 +21,12 @@
     })();
   </script>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!--
-    Inter (corpo) + Space Grotesk (números e títulos), carregados aqui e não por
-    @import dentro do CSS: o @import bloqueia a renderização da folha de estilo
-    inteira até a fonte resolver.
+    As fontes (Geist e Geist Mono) são auto-hospedadas e entram pelo bundle, em
+    src/main.ts. Não há mais <link> para o Google: além da dependência externa
+    no caminho de carregamento, cada visita mandava o IP do usuário para um
+    terceiro sem necessidade nenhuma.
   -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div id="app"></div>

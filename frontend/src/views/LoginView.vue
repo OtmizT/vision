@@ -138,12 +138,12 @@ async function submit() {
 
 .login-logo-name { font-size: var(--fs-lg); font-weight: 800; color: var(--text); }
 .login-logo-name span { color: var(--primary); }
-.login-logo-sub { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
+.login-logo-sub { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 2px; margin-top: 2px; }
 
 .login-form { display: flex; flex-direction: column; gap: 18px; }
 
 .login-error {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--danger);
   background: var(--danger-weak);
@@ -154,7 +154,7 @@ async function submit() {
 
 .login-footer {
   text-align: center;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--text-dim);
   margin-top: 28px;

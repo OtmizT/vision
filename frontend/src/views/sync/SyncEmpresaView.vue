@@ -417,7 +417,7 @@ onUnmounted(() => {
   color: var(--text-muted);
   border-radius: 6px;
   padding: 6px 14px;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   cursor: pointer;
   transition: var(--transition);
@@ -432,9 +432,9 @@ onUnmounted(() => {
   flex: 1;
   min-width: 0;
 }
-.bc-root { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.bc-root { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
 .bc-sep { color: var(--border-strong); }
-.bc-current { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-current { font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .header-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
@@ -444,7 +444,7 @@ onUnmounted(() => {
   color: var(--text-muted);
   border-radius: 6px;
   padding: 6px 16px;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 700;
   cursor: pointer;
@@ -469,7 +469,7 @@ onUnmounted(() => {
   border: none;
   border-bottom: 2px solid transparent;
   padding: 10px 20px;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--text-dim);
@@ -492,7 +492,7 @@ onUnmounted(() => {
 
 /* Badges */
 .badge-running {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--primary);
   background: var(--primary-weak);

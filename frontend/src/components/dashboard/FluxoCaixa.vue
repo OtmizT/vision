@@ -412,7 +412,7 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
 .fc-state {
   padding: 48px; text-align: center; gap: 10px;
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim);
+  font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim);
 }
 .fc-state--erro { color: var(--danger); }
 
@@ -457,16 +457,16 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
   gap: var(--sp-4); flex-wrap: wrap; margin-bottom: var(--sp-4);
 }
 .fc-card-title {
-  font-family: var(--font-display); font-size: var(--fs-md); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600;
   color: var(--text);
 }
 .fc-card-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
-.fc-vazio { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); padding: 16px 0; }
+.fc-vazio { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); padding: 16px 0; }
 
 .fc-btn, .fc-input, .fc-select {
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 7px;
-  padding: 5px 10px; font-family: var(--font-display); font-size: var(--fs-xs); outline: none;
+  padding: 5px 10px; font-family: var(--font-mono); font-size: var(--fs-xs); outline: none;
 }
 .fc-btn { cursor: pointer; transition: var(--transition); }
 .fc-btn:hover { border-color: var(--primary); color: var(--primary); }
@@ -482,7 +482,7 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
   margin-bottom: calc(var(--sp-4) * -1 + 4px);
 }
 .fc-recorte-txt {
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
   color: var(--primary);
   background: var(--primary-weak); border-radius: 20px; padding: 2px 10px;
 }
@@ -492,7 +492,7 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
 /* ── Calendário ── */
 .cal-semana, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
 .cal-semana {
-  margin-bottom: 6px; font-family: var(--font-display); font-size: var(--fs-xs);
+  margin-bottom: 6px; font-family: var(--font-mono); font-size: var(--fs-xs);
   font-weight: 600; letter-spacing: .04em;
   color: var(--text-dim); text-align: center;
 }
@@ -512,9 +512,9 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
 .cal-dia--vazio { opacity: 0.35; cursor: default; }
 .cal-dia--sel { border-color: var(--primary); background: var(--primary-weak); }
 .cal-dia--hoje .cal-num { color: var(--primary); font-weight: 700; }
-.cal-num { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); line-height: 1.3; }
+.cal-num { font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: 600; color: var(--text-muted); line-height: 1.3; }
 .cal-val {
-  font-family: var(--font-display); font-size: var(--fs-xs); line-height: 1.2;
+  font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
 }
 .cal-val--in  { color: var(--success); }
@@ -530,7 +530,7 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
 .fc-scroll { overflow-x: auto; }
 .fc-table { width: 100%; border-collapse: collapse; min-width: 720px; }
 .fc-table th {
-  font-family: var(--font-display); font-size: var(--fs-xs); letter-spacing: 1px; color: var(--text-dim);
+  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 1px; color: var(--text-dim);
   text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border-strong); white-space: nowrap;
 }
 .fc-table td {
@@ -540,14 +540,14 @@ watch(() => [props.grupoId, props.filtros, props.mes], carregar, { deep: true, i
 .fc-table tr:last-child td { border-bottom: none; }
 .fc-table tr:hover td { background: var(--surface-2); }
 .ta-r { text-align: right; }
-.mono { font-family: var(--font-display); font-size: var(--fs-xs); }
+.mono { font-family: var(--font-mono); font-size: var(--fs-xs); }
 
 .res-val--in     { color: var(--success); }
 .res-val--out    { color: var(--danger); }
 
 .pill {
   display: inline-flex; padding: 2px 8px; border-radius: 20px;
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; white-space: nowrap;
 }
 .pill--in  { background: var(--success-weak); color: var(--success); }
 .pill--out  { background: var(--danger-weak); color: var(--danger); }

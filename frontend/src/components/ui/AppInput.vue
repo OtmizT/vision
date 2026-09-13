@@ -63,7 +63,7 @@ const currentType  = computed(() => props.type === 'password' && showPassword.va
 .input-wrap { display: flex; flex-direction: column; gap: 6px; }
 
 .input-label {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--text-dim);
@@ -108,6 +108,6 @@ const currentType  = computed(() => props.type === 'password' && showPassword.va
 .input-eye:hover { color: var(--text-muted); }
 .input-eye svg { width: 15px; height: 15px; }
 
-.input-error { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--danger); }
-.input-hint  { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); }
+.input-error { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--danger); }
+.input-hint  { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
 </style>

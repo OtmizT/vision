@@ -7,7 +7,7 @@
 
       <!-- Seletor de grupo (admin_global) -->
       <div v-if="auth.isAdminGlobal" style="display:flex;align-items:center;gap:8px">
-        <span style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">GRUPO</span>
+        <span style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">GRUPO</span>
         <select
           v-model="selectedGrupoId"
           class="select-input"
@@ -17,7 +17,7 @@
           <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.nome }}</option>
         </select>
       </div>
-      <div v-else style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">
+      <div v-else style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">
         {{ grupoNome }}
       </div>
     </div>
@@ -25,7 +25,7 @@
     <!-- Aviso sem grupo selecionado -->
     <div
       v-if="!activeGrupoId"
-      style="padding:48px;text-align:center;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)"
+      style="padding:48px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)"
     >
       Selecione um grupo para começar.
     </div>
@@ -69,7 +69,7 @@
               @keydown="onKeydown"
             />
             <div class="editor-footer">
-              <span style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">
+              <span style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">
                 Ctrl+Enter para executar
               </span>
               <button
@@ -87,7 +87,7 @@
           <!-- Estado de erro da API -->
           <div
             v-if="queryError"
-            style="margin-top:12px;padding:12px 14px;background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:8px;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)"
+            style="margin-top:12px;padding:12px 14px;background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:8px;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger)"
           >
             {{ queryError }}
           </div>
@@ -95,20 +95,20 @@
           <!-- Resultado -->
           <div v-if="result" class="result-panel">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">
-              <span style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">
+              <span style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">
                 {{ result.row_count }} {{ result.row_count === 1 ? 'linha' : 'linhas' }}
                 &nbsp;·&nbsp;
                 {{ elapsed }}ms
               </span>
               <span
                 v-if="result.truncated"
-                style="font-family:var(--font-display);font-size: var(--fs-xs);padding:2px 8px;border-radius:4px;background:var(--warning-weak);color:var(--warning);border:1px solid var(--warning-weak)"
+                style="font-family:var(--font-mono);font-size: var(--fs-xs);padding:2px 8px;border-radius:4px;background:var(--warning-weak);color:var(--warning);border:1px solid var(--warning-weak)"
               >
                 Truncado em 1000 linhas
               </span>
             </div>
 
-            <div v-if="result.columns.length === 0" style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);padding:24px 0;text-align:center">
+            <div v-if="result.columns.length === 0" style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);padding:24px 0;text-align:center">
               Nenhum resultado.
             </div>
 
@@ -131,7 +131,7 @@
           <!-- Estado vazio inicial -->
           <div
             v-else-if="!executing && !queryError"
-            style="padding:48px;text-align:center;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)"
+            style="padding:48px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)"
           >
             Execute uma query para ver os resultados.
           </div>
@@ -274,7 +274,7 @@ onMounted(loadGrupos)
 }
 
 .tables-sidebar-header {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   letter-spacing: 2px;
   color: var(--text-dim);
@@ -287,7 +287,7 @@ onMounted(loadGrupos)
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--text-muted);
   cursor: pointer;
@@ -320,7 +320,7 @@ onMounted(loadGrupos)
   padding: 16px;
   background: transparent;
   color: var(--text);
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-sm);
   line-height: 1.7;
   border: none;
@@ -346,7 +346,7 @@ onMounted(loadGrupos)
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   padding: 6px 10px;
   outline: none;
@@ -366,7 +366,7 @@ onMounted(loadGrupos)
 .result-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
 }
 

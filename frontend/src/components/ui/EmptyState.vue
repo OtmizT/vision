@@ -43,7 +43,7 @@ withDefaults(defineProps<{
   color: var(--text-muted);
 }
 .empty-desc {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--text-dim);
   max-width: 320px;

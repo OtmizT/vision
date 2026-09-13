@@ -188,7 +188,7 @@ function handleInspecionar(item: SyncJobProgress) {
 }
 
 .company-label {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   color: var(--text-dim);
   letter-spacing: 1px;
@@ -228,7 +228,7 @@ function handleInspecionar(item: SyncJobProgress) {
   background: transparent;
   border: none;
   padding: 0 0 12px 0;
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--text-dim);

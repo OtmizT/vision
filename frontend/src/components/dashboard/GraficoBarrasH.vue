@@ -100,15 +100,15 @@ function alternarTodos() {
   gap: var(--sp-4); margin-bottom: var(--sp-4); flex-wrap: wrap;
 }
 .gr-title {
-  font-family: var(--font-display); font-size: var(--fs-md); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600;
   color: var(--text);
 }
 .gr-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
-.gr-vazio { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); padding: 24px 0; }
+.gr-vazio { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); padding: 24px 0; }
 .gr-acao {
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 7px;
-  padding: 4px 9px; font-family: var(--font-display); font-size: var(--fs-xs);
+  padding: 4px 9px; font-family: var(--font-mono); font-size: var(--fs-xs);
   cursor: pointer; transition: var(--transition); white-space: nowrap;
 }
 .gr-acao:hover { border-color: var(--primary); color: var(--primary); }
@@ -141,7 +141,7 @@ function alternarTodos() {
   transition: width 0.25s ease;
 }
 .bar-valor {
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
   color: var(--text); white-space: nowrap;
 }
 </style>

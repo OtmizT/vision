@@ -206,7 +206,7 @@ function handleSave() {
 }
 
 .section-label {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--primary);
@@ -220,7 +220,7 @@ function handleSave() {
 
 .status-badge {
   display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600;
   padding: 4px 10px; border-radius: 999px;
 }
 .status-badge--on  { background: var(--success-weak);  color: var(--success); }
@@ -250,14 +250,14 @@ function handleSave() {
 .next-datetime--none { color: var(--text-dim); font-size: var(--fs-base); font-weight: 400; }
 
 .countdown {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-sm);
   color: var(--primary);
   font-variant-numeric: tabular-nums;
 }
 .countdown--now { color: var(--success); }
 
-.last-sync { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); }
+.last-sync { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
 
 /* Interval row */
 .interval-row {
@@ -284,7 +284,7 @@ function handleSave() {
 .executor-chip {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 12px; border-radius: 8px;
-  font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 500;
+  font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 500;
   border: 1px solid transparent;
 }
 .executor-chip--on  {
@@ -315,7 +315,7 @@ function handleSave() {
 .btn-save {
   background: var(--surface-2); border: 1px solid var(--border-strong);
   color: var(--primary); border-radius: var(--r-sm);
-  padding: 10px 24px; font-family: var(--font-display);
+  padding: 10px 24px; font-family: var(--font-mono);
   font-size: var(--fs-xs); font-weight: 700; cursor: pointer;
   transition: var(--transition); display: flex; align-items: center; gap: 8px;
 }

@@ -9,15 +9,15 @@
       
     <!-- Seletor de grupo para admin_global -->
     <div v-if="auth.isAdminGlobal && grupos.length > 0" style="margin-bottom:16px">
-      <label style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:6px">GRUPO</label>
+      <label style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:6px">GRUPO</label>
       <select v-model="grupoId" class="input-el" style="max-width:320px" @change="load">
         <option value="">Selecione um grupo...</option>
         <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.nome }}</option>
       </select>
     </div>
 <div v-if="loading" style="padding:48px;text-align:center"><div class="spinner"></div></div>
-      <div v-else-if="error" style="padding:32px;text-align:center;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)">{{ error }}</div>
-      <div v-else-if="empresas.length===0" style="padding:48px;text-align:center;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">Nenhuma empresa cadastrada.</div>
+      <div v-else-if="error" style="padding:32px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger)">{{ error }}</div>
+      <div v-else-if="empresas.length===0" style="padding:48px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">Nenhuma empresa cadastrada.</div>
       <div v-else style="overflow-x:auto">
         <table>
           <thead><tr>
@@ -26,9 +26,9 @@
           <tbody>
             <tr v-for="e in empresas" :key="e.id">
               <td style="font-weight:600">{{ e.nome }}</td>
-              <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ e.cnpj||"-" }}</td>
-              <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ e.app_key }}</td>
-              <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ e.app_secret }}</td>
+              <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ e.cnpj||"-" }}</td>
+              <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ e.app_key }}</td>
+              <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ e.app_secret }}</td>
               <td><span :class="['pill', statusCls(e.status)]">{{ e.status }}</span></td>
               <td><span :class="['pill', syncCls(e.status_sync)]">{{ e.status_sync }}</span></td>
               <td style="text-align:right;white-space:nowrap">
@@ -57,7 +57,7 @@
           <div class="field">
             <label>APP SECRET</label>
             <input v-model="form.app_secret" type="password" class="input-el" :placeholder="editing ? 'Deixe vazio para manter atual' : 'App Secret do Omie'" />
-            <p style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);margin-top:4px">O secret nao sera exibido apos salvar.</p>
+            <p style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);margin-top:4px">O secret nao sera exibido apos salvar.</p>
             <p v-if="fe.app_secret" class="err">{{ fe.app_secret }}</p>
           </div>
           <p v-if="saveErr" class="err-box">{{ saveErr }}</p>
@@ -75,7 +75,7 @@
         <div class="modal-header"><span style="font-size: var(--fs-md);font-weight:700">Confirmar exclusao</span><button @click="showConfirm=false" class="btn-close">x</button></div>
         <div class="modal-body">
           <p style="font-size: var(--fs-sm);color:var(--text-muted)">Deseja excluir a empresa <strong style="color:var(--text)">{{ delTarget?.nome }}</strong>?</p>
-          <p style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);margin-top:8px">A empresa sera marcada para exclusao em 30 dias. Voce pode reativar durante esse periodo.</p>
+          <p style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);margin-top:8px">A empresa sera marcada para exclusao em 30 dias. Voce pode reativar durante esse periodo.</p>
           <p v-if="deleteErr" class="err-box" style="margin-top:10px">{{ deleteErr }}</p>
         </div>
         <div class="modal-footer">
@@ -182,10 +182,10 @@ onMounted(()=>{ loadGrupos(); if(grupoId.value) load() })
 <style scoped>
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 table{width:100%;border-collapse:collapse}
-th{font-family:var(--font-display);font-size: var(--fs-xs);letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:11px 18px;text-align:left;background:var(--surface-2);border-bottom:1px solid var(--border)}
+th{font-family:var(--font-mono);font-size: var(--fs-xs);letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:11px 18px;text-align:left;background:var(--surface-2);border-bottom:1px solid var(--border)}
 td{padding:10px 18px;font-size: var(--fs-sm);color:var(--text);border-bottom:1px solid var(--border)}
 tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
-.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-family:var(--font-display);font-size: var(--fs-xs);font-weight:600}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-family:var(--font-mono);font-size: var(--fs-xs);font-weight:600}
 .pill-green{background:var(--success-weak);color:var(--success)}.pill-red{background:var(--danger-weak);color:var(--danger)}.pill-yellow{background:var(--warning-weak);color:var(--warning)}.pill-gray{background:var(--surface-2);color:var(--text-dim)}
 .btn-primary{background:var(--primary);color:var(--text-oncolor);border:none;border-radius:8px;padding:8px 16px;font-size: var(--fs-sm);font-weight:600;cursor:pointer;transition:var(--transition);text-decoration:none;display:inline-block}
 .btn-primary:hover:not(:disabled){background:var(--primary-hover)}.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
@@ -201,11 +201,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
 .modal-body{padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
 .field{display:flex;flex-direction:column;gap:6px}
-label{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
+label{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
 .input-el{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:9px 12px;font-size: var(--fs-sm);color:var(--text);outline:none;transition:border-color 0.2s}
 .input-el:focus{border-color:var(--primary)}.input-el:disabled{opacity:0.5}
-.err{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)}
-.err-box{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger);background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:7px;padding:9px 12px}
+.err{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger)}
+.err-box{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger);background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:7px;padding:9px 12px}
 .spinner{width:24px;height:24px;border:2px solid var(--border-strong);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>

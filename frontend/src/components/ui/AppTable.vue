@@ -175,7 +175,7 @@ const pageNumbers = computed(() => {
 table { width: 100%; border-collapse: collapse; }
 
 th {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs); letter-spacing: 1.5px;
   text-transform: uppercase; color: var(--text-dim);
   padding: 12px 20px; text-align: left;
@@ -200,7 +200,7 @@ td {
 .table-row:last-child td { border-bottom: none; }
 .table-row:hover td { background: var(--surface-2); }
 
-.td-mono { font-family: var(--font-display); font-size: var(--fs-xs); }
+.td-mono { font-family: var(--font-mono); font-size: var(--fs-xs); }
 .td-actions { text-align: right; }
 
 /* Skeleton */
@@ -219,13 +219,13 @@ td {
   padding: 12px 18px; border-top: 1px solid var(--border);
   flex-wrap: wrap; gap: 8px;
 }
-.page-info { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); }
+.page-info { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
 .page-btns { display: flex; gap: 3px; }
 .page-btn {
   min-width: 30px; height: 30px; padding: 0 6px;
   border-radius: 6px; border: 1px solid var(--border-strong);
   background: var(--surface-2); color: var(--text-muted);
-  font-family: var(--font-display); font-size: var(--fs-xs);
+  font-family: var(--font-mono); font-size: var(--fs-xs);
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: var(--transition);
 }

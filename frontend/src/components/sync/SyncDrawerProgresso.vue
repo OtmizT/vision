@@ -234,20 +234,20 @@ function formatErro(erro: string | null | undefined): string {
 
 .job-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
 .job-info { display: flex; flex-direction: column; gap: 4px; }
-.job-title { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 700; color: var(--text); }
+.job-title { font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: 700; color: var(--text); }
 .job-id { font-size: var(--fs-xs); color: var(--text-dim); }
 .job-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
 .job-time { font-size: var(--fs-xs); color: var(--text-muted); }
 
 .error-banner { background: var(--danger-weak); border: 1px solid var(--danger-weak); border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; }
-.error-title { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 700; color: var(--danger); margin-bottom: 4px; }
+.error-title { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 700; color: var(--danger); margin-bottom: 4px; }
 .error-msg { font-size: var(--fs-xs); color: var(--text); line-height: 1.4; }
 
 .progress-list { display: flex; flex-direction: column; gap: 16px; }
 .progress-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: var(--sp-4); margin-bottom: var(--sp-2); }
 
 .progress-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.executor-name { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; color: var(--primary); }
+.executor-name { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; color: var(--primary); }
 
 .progress-details { display: flex; align-items: center; gap: 16px; }
 .progress-bar-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
@@ -262,14 +262,14 @@ function formatErro(erro: string | null | undefined): string {
 
 .executor-error { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--surface-2); font-size: var(--fs-xs); color: var(--danger); }
 
-.td-mono { font-family: var(--font-display); }
-.pill { display: inline-flex; padding: 2px 9px; border-radius: 20px; font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; }
+.td-mono { font-family: var(--font-mono); }
+.pill { display: inline-flex; padding: 2px 9px; border-radius: 20px; font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; }
 .pill-green { background: var(--success-weak); color: var(--success); }
 .pill-red { background: var(--danger-weak); color: var(--danger); }
 .pill-blue { background: var(--primary-weak); color: var(--info); }
 .pill-gray { background: var(--surface-2); color: var(--text-dim); }
 
-.pill-small { font-family: var(--font-display); font-size: var(--fs-xs); text-transform: uppercase; font-weight: 700; }
+.pill-small { font-family: var(--font-mono); font-size: var(--fs-xs); text-transform: uppercase; font-weight: 700; }
 /* Classes locais, nao utilitarias do Tailwind: os nomes coincidem, mas quem as
    aplica e o switch de status logo acima. O azul usava o ciano da identidade
    anterior; agora acompanha a primaria. */
@@ -296,7 +296,7 @@ function formatErro(erro: string | null | undefined): string {
 .page-table th {
   text-align: left;
   color: var(--text-dim);
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   padding: 4px 8px;
   border-bottom: 1px solid var(--surface-2);
 }

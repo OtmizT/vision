@@ -155,7 +155,7 @@ function statusCls(s: string) {
 .drawer-tab-content { padding: 24px; }
 
 .section-header { margin-bottom: 20px; }
-.section-title { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.section-title { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
 .section-desc { font-size: var(--fs-xs); color: var(--text-dim); margin: 0; }
 
 .loading-state, .empty-state { padding: 48px 24px; text-align: center; color: var(--text-dim); font-size: var(--fs-xs); display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -190,7 +190,7 @@ function statusCls(s: string) {
   color: var(--text-muted); 
   border-radius: 6px; 
   padding: 10px; 
-  font-family: var(--font-display); 
+  font-family: var(--font-mono); 
   font-size: var(--fs-xs); 
   font-weight: 700; 
   cursor: pointer; 
@@ -199,8 +199,8 @@ function statusCls(s: string) {
 .btn-load-more:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
 .btn-load-more:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.td-mono { font-family: var(--font-display); }
-.pill-small { font-family: var(--font-display); font-size: var(--fs-xs); text-transform: uppercase; font-weight: 700; }
+.td-mono { font-family: var(--font-mono); }
+.pill-small { font-family: var(--font-mono); font-size: var(--fs-xs); text-transform: uppercase; font-weight: 700; }
 .st-ok { color: var(--success); }
 .st-erro { color: var(--danger); }
 .st-ativo { color: var(--info); }

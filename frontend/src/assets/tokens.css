@@ -2,8 +2,8 @@
    DESIGN TOKENS — OTMIZTech / Omie Sync
    Fonte da verdade visual. Nenhuma cor deve existir fora deste arquivo.
 
-   As fontes são carregadas por <link> no index.html, não por @import: o
-   @import bloqueia a renderização desta folha até a requisição resolver.
+   As fontes são auto-hospedadas e importadas em src/main.ts, antes desta
+   folha. Ver o comentário de lá para o porquê.
    ================================================================ */
 
 /* ─────────────────────────────────────────────────────────────────
@@ -98,8 +98,23 @@
    GLOBAIS — tipografia, forma, espaço e medidas do shell
    ───────────────────────────────────────────────────────────────── */
 :root {
-  --font-body:    'Inter', system-ui, sans-serif;
-  --font-display: 'Space Grotesk', system-ui, sans-serif;
+  /*
+   * Duas famílias, dois papéis.
+   *
+   * --font-body  é o texto de verdade: corpo, navegação, cards, células de
+   *              tabela, rótulos de eixo dos gráficos.
+   * --font-mono  é o papel de apoio: rótulos curtos, badges, pills de status,
+   *              cabeçalhos de coluna e valores monetários.
+   *
+   * O token chamava-se --font-display e apontava para Space Grotesk, que é
+   * proporcional. Virou --font-mono junto com a troca para Geist Mono: manter o
+   * nome antigo sobre uma fonte monoespaçada enganaria quem mexesse depois.
+   *
+   * O sufixo "Variable" faz parte do nome que o @font-face do Fontsource
+   * declara — sem ele o navegador não encontra a família e cai no fallback.
+   */
+  --font-body: 'Geist Variable', system-ui, sans-serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'Courier New', monospace;
 
   /* Escala em rem. O piso é --fs-xs = 12px: a base anterior tinha textos de
      8px e 9px, pequenos demais para leitura. */
@@ -147,10 +162,12 @@ body {
 ::selection { background: var(--primary-weak); }
 :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
 
-/* Números tabulares. Space Grotesk é proporcional, ao contrário da DM Mono que
-   usávamos antes — sem "tnum" as colunas de valores deixam de alinhar. */
+/* Números tabulares.
+   Com Geist Mono o alinhamento das colunas vem da própria fonte — todo glifo
+   ocupa a mesma largura. O "tnum" fica como cinto e suspensório: se a família
+   cair no fallback, o substituto pode ser proporcional. */
 .num {
-  font-family: var(--font-display);
+  font-family: var(--font-mono);
   font-feature-settings: "tnum" 1;
   letter-spacing: -.01em;
 }

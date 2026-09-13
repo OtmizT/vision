@@ -64,7 +64,7 @@ defineProps<{
 
 <style scoped>
 .fc-card-title {
-  font-family: var(--font-display); font-size: var(--fs-md); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600;
   color: var(--text);
 }
 .fc-card-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
@@ -76,7 +76,7 @@ defineProps<{
 .res-linha--total { border-bottom: none; border-top: 1px solid var(--border-strong); margin-top: 4px; padding-top: 10px; }
 .res-rot { font-size: var(--fs-xs); color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 .res-prev {
-  font-family: var(--font-display); font-size: var(--fs-xs); letter-spacing: 0.5px;
+  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 0.5px;
   padding: 1px 5px; border-radius: 10px;
   background: var(--warning-weak); color: var(--warning);
 }
@@ -84,11 +84,11 @@ defineProps<{
    mesma coisa que "ainda vai vencer". Mesma distincao ja feita na pill da
    listagem. */
 .res-atraso {
-  font-family: var(--font-display); font-size: var(--fs-xs); letter-spacing: 0.5px;
+  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 0.5px;
   padding: 1px 5px; border-radius: 10px;
   background: var(--danger-weak); color: var(--danger);
 }
-.res-val { font-family: var(--font-display); font-size: var(--fs-xs); font-weight: 600; }
+.res-val { font-family: var(--font-mono); font-size: var(--fs-xs); font-weight: 600; }
 .res-val--in     { color: var(--success); }
 .res-val--out    { color: var(--danger); }
 .res-val--atraso { color: var(--danger); font-weight: 700; }

@@ -6,13 +6,13 @@
         <div class="avatar-lg">{{ initials }}</div>
         <div>
           <p style="font-size: var(--fs-md);font-weight:700">{{ auth.user?.nome }}</p>
-          <p style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);margin-top:3px">{{ auth.user?.email }}</p>
+          <p style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);margin-top:3px">{{ auth.user?.email }}</p>
           <span class="pill" style="margin-top:6px">{{ auth.user?.role }}</span>
         </div>
       </div>
       <div style="border-top:1px solid var(--border);padding-top:16px;display:flex;flex-direction:column;gap:10px">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">TEMA</span>
+          <span style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">TEMA</span>
           <button @click="ui.toggleTheme()" class="btn-ghost" style="font-size: var(--fs-xs)">
             {{ ui.theme==="dark"?"Mudar para Claro":"Mudar para Escuro" }}
           </button>
@@ -26,8 +26,8 @@
         <div class="field"><label>SENHA ATUAL</label><input v-model="pw.atual" type="password" class="input-el" placeholder="Sua senha de hoje" /></div>
         <div class="field"><label>NOVA SENHA</label><input v-model="pw.p1" type="password" class="input-el" placeholder="Minimo 8 caracteres" /></div>
         <div class="field"><label>CONFIRMAR SENHA</label><input v-model="pw.p2" type="password" class="input-el" placeholder="Repita a senha" /></div>
-        <p v-if="pwErr" style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)">{{ pwErr }}</p>
-        <p v-if="pwOk" style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--success)">Senha alterada com sucesso.</p>
+        <p v-if="pwErr" style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger)">{{ pwErr }}</p>
+        <p v-if="pwOk" style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--success)">Senha alterada com sucesso.</p>
         <button class="btn-primary" :disabled="savingPw" @click="savePwd" style="align-self:flex-start">{{ savingPw?"...":"Salvar Senha" }}</button>
       </div>
     </div>
@@ -82,9 +82,9 @@ async function logout() {
 <style scoped>
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px}
 .avatar-lg{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-line));display:flex;align-items:center;justify-content:center;font-size: var(--fs-lg);font-weight:800;color:var(--text-oncolor);flex-shrink:0}
-.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-family:var(--font-display);font-size: var(--fs-xs);font-weight:600;background:var(--primary-weak);color:var(--primary)}
+.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-family:var(--font-mono);font-size: var(--fs-xs);font-weight:600;background:var(--primary-weak);color:var(--primary)}
 .field{display:flex;flex-direction:column;gap:6px}
-label{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
+label{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
 .input-el{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:9px 12px;font-size: var(--fs-sm);color:var(--text);outline:none;transition:border-color 0.2s}
 .input-el:focus{border-color:var(--primary)}
 .btn-primary{background:var(--primary);color:var(--text-oncolor);border:none;border-radius:8px;padding:9px 18px;font-size: var(--fs-sm);font-weight:600;cursor:pointer}

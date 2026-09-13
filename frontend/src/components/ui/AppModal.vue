@@ -79,7 +79,7 @@ function onBackdrop() {
 }
 
 .modal-title    { font-size: var(--fs-md); font-weight: 700; color: var(--text); }
-.modal-subtitle { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); margin-top: 3px; }
+.modal-subtitle { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); margin-top: 3px; }
 
 .modal-close {
   width: 28px; height: 28px;

@@ -11,25 +11,25 @@
       
     <!-- Seletor de grupo para admin_global -->
     <div v-if="auth.isAdminGlobal && grupos.length > 0" style="margin-bottom:16px">
-      <label style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:6px">GRUPO</label>
+      <label style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase;display:block;margin-bottom:6px">GRUPO</label>
       <select v-model="grupoId" class="input-el" style="max-width:320px" @change="load">
         <option value="">Selecione um grupo...</option>
         <option v-for="g in grupos" :key="g.id" :value="g.id">{{ g.nome }}</option>
       </select>
     </div>
 <div v-if="loading" style="padding:48px;text-align:center"><div class="spinner"></div></div>
-      <div v-else-if="error" style="padding:32px;text-align:center;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)">{{ error }}</div>
-      <div v-else-if="usuarios.length===0" style="padding:48px;text-align:center;font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">Nenhum usuario cadastrado.</div>
+      <div v-else-if="error" style="padding:32px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger)">{{ error }}</div>
+      <div v-else-if="usuarios.length===0" style="padding:48px;text-align:center;font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">Nenhum usuario cadastrado.</div>
       <div v-else style="overflow-x:auto">
         <table>
           <thead><tr><th>NOME</th><th>EMAIL</th><th>ROLE</th><th>ATIVO</th><th>CRIADO EM</th><th style="text-align:right">ACOES</th></tr></thead>
           <tbody>
             <tr v-for="u in usuarios" :key="u.id">
               <td style="font-weight:600">{{ u.nome }}</td>
-              <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ u.email }}</td>
+              <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ u.email }}</td>
               <td><span :class="['pill', roleCls(u.role)]">{{ rotuloPapel(u.role) }}</span></td>
               <td><span :class="['pill', u.ativo?'pill-green':'pill-gray']">{{ u.ativo?"Ativo":"Inativo" }}</span></td>
-              <td style="font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim)">{{ fmt(u.created_at) }}</td>
+              <td style="font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim)">{{ fmt(u.created_at) }}</td>
               <td style="text-align:right;white-space:nowrap">
                 <button class="btn-ghost" @click="openPwd(u)" style="margin-right:6px;font-size: var(--fs-xs)">Senha</button>
                 <button class="btn-ghost" @click="openEdit(u)" style="margin-right:6px">Editar</button>
@@ -173,10 +173,10 @@ onMounted(()=>{ loadGrupos(); if(grupoId.value) load() })
 <style scoped>
 .table-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 table{width:100%;border-collapse:collapse}
-th{font-family:var(--font-display);font-size: var(--fs-xs);letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:11px 18px;text-align:left;background:var(--surface-2);border-bottom:1px solid var(--border)}
+th{font-family:var(--font-mono);font-size: var(--fs-xs);letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);padding:11px 18px;text-align:left;background:var(--surface-2);border-bottom:1px solid var(--border)}
 td{padding:10px 18px;font-size: var(--fs-sm);color:var(--text);border-bottom:1px solid var(--border)}
 tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
-.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-family:var(--font-display);font-size: var(--fs-xs);font-weight:600}
+.pill{display:inline-flex;padding:2px 9px;border-radius:20px;font-family:var(--font-mono);font-size: var(--fs-xs);font-weight:600}
 .pill-green{background:var(--success-weak);color:var(--success)}.pill-gray{background:var(--surface-2);color:var(--text-dim)}.pill-blue{background:var(--primary-weak);color:var(--info)}.pill-accent{background:var(--primary-weak);color:var(--primary)}
 .btn-primary{background:var(--primary);color:var(--text-oncolor);border:none;border-radius:8px;padding:8px 16px;font-size: var(--fs-sm);font-weight:600;cursor:pointer;transition:var(--transition)}
 .btn-primary:hover:not(:disabled){background:var(--primary-hover)}.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
@@ -192,11 +192,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:var(--surface-2)}
 .modal-body{padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
 .modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
 .field{display:flex;flex-direction:column;gap:6px}
-label{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
+label{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--text-dim);letter-spacing:1.5px;text-transform:uppercase}
 .input-el{background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:9px 12px;font-size: var(--fs-sm);color:var(--text);outline:none;transition:border-color 0.2s}
 .input-el:focus{border-color:var(--primary)}
-.err{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger)}
-.err-box{font-family:var(--font-display);font-size: var(--fs-xs);color:var(--danger);background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:7px;padding:9px 12px}
+.err{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger)}
+.err-box{font-family:var(--font-mono);font-size: var(--fs-xs);color:var(--danger);background:var(--danger-weak);border:1px solid var(--danger-weak);border-radius:7px;padding:9px 12px}
 .spinner{width:24px;height:24px;border:2px solid var(--border-strong);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto}
 @keyframes spin{to{transform:rotate(360deg)}}
 </style>

@@ -228,7 +228,7 @@ const navSections = computed(() => {
   .logo-icon {
     border-radius: 10px;
     background: linear-gradient(135deg, var(--primary-line), var(--accent-line));
-    font-family: var(--font-display); font-size: var(--fs-md); font-weight: 700;
+    font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 700;
     color: #fff; box-shadow: 0 2px 10px var(--primary-weak);
   }
 }
@@ -243,14 +243,14 @@ const navSections = computed(() => {
 
 .logo-name { font-size: var(--fs-md); font-weight: 800; color: var(--text); }
 .logo-name span { color: var(--primary); }
-.logo-sub { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 2px; margin-top: 1px; }
+.logo-sub { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); letter-spacing: 2px; margin-top: 1px; }
 
 .nav-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 10px 8px; }
 .nav-scroll::-webkit-scrollbar { width: 3px; }
 .nav-scroll::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 
 .nav-label {
-  font-family: var(--font-display); font-size: var(--fs-xs); letter-spacing: 2px; color: var(--text-dim);
+  font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 2px; color: var(--text-dim);
   padding: 8px 8px 4px; white-space: nowrap; overflow: hidden;
   opacity: 0; max-height: 0; transition: opacity 0.2s, max-height 0.2s;
 }
@@ -298,7 +298,7 @@ const navSections = computed(() => {
 .sidebar--mobile-open .user-info { opacity: 1; width: auto; }
 
 .user-name { font-size: var(--fs-xs); font-weight: 700; white-space: nowrap; }
-.user-role { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); }
+.user-role { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); }
 
 .user-contexto {
   margin-top: 3px;

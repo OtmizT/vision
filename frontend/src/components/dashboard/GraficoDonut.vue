@@ -168,15 +168,15 @@ onBeforeUnmount(() => chart?.destroy())
   gap: var(--sp-4); margin-bottom: var(--sp-4); flex-wrap: wrap;
 }
 .gr-title {
-  font-family: var(--font-display); font-size: var(--fs-md); font-weight: 600;
+  font-family: var(--font-mono); font-size: var(--fs-md); font-weight: 600;
   color: var(--text);
 }
 .gr-sub { font-size: var(--fs-xs); color: var(--text-dim); margin-top: 2px; }
-.gr-vazio { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); padding: 24px 0; }
+.gr-vazio { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); padding: 24px 0; }
 .gr-acao {
   background: var(--surface-2); color: var(--text-muted);
   border: 1px solid var(--border-strong); border-radius: 7px;
-  padding: 4px 9px; font-family: var(--font-display); font-size: var(--fs-xs);
+  padding: 4px 9px; font-family: var(--font-mono); font-size: var(--fs-xs);
   cursor: pointer; transition: var(--transition); white-space: nowrap;
 }
 .gr-acao:hover { border-color: var(--primary); color: var(--primary); }
@@ -202,9 +202,9 @@ onBeforeUnmount(() => chart?.destroy())
   position: absolute; inset: 0; display: flex; flex-direction: column;
   align-items: center; justify-content: center; pointer-events: none;
 }
-.gr-centro-rot { font-family: var(--font-display); font-size: var(--fs-xs); letter-spacing: 1.5px; color: var(--text-dim); }
+.gr-centro-rot { font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: 1.5px; color: var(--text-dim); }
 .gr-centro-val {
-  font-family: var(--font-display); font-feature-settings: "tnum" 1;
+  font-family: var(--font-mono); font-feature-settings: "tnum" 1;
   font-size: var(--fs-xl); font-weight: 700; letter-spacing: -.02em; color: var(--text);
 }
 
@@ -226,6 +226,6 @@ onBeforeUnmount(() => chart?.destroy())
   font-size: var(--fs-sm); color: var(--text-muted);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.leg-val { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text); white-space: nowrap; }
-.leg-pct { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); text-align: right; }
+.leg-val { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text); white-space: nowrap; }
+.leg-pct { font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--text-dim); text-align: right; }
 </style>
