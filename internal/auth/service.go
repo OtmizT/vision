@@ -69,11 +69,7 @@ func (s *service) Login(ctx context.Context, email, password string) (*LoginResp
 		grupoID = grupos[0].ID
 	}
 
-	role, _ := s.repo.GetRoleNoGrupo(ctx, usuario.ID, grupoID)
-	if role == "" {
-		role = usuario.Role
-	}
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, role)
+	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, s.papelNoGrupo(ctx, usuario, grupoID))
 }
 
 func (s *service) SelectGrupo(ctx context.Context, preAuthToken, grupoID string) (*LoginResponse, error) {
@@ -95,11 +91,7 @@ func (s *service) SelectGrupo(ctx context.Context, preAuthToken, grupoID string)
 		return nil, fmt.Errorf("auth.service.SelectGrupo buscar usuário: %w", err)
 	}
 
-	role, _ := s.repo.GetRoleNoGrupo(ctx, usuario.ID, grupoID)
-	if role == "" {
-		role = usuario.Role
-	}
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, role)
+	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, s.papelNoGrupo(ctx, usuario, grupoID))
 }
 
 func (s *service) TrocaGrupo(ctx context.Context, userID, grupoID string) (*LoginResponse, error) {
@@ -116,11 +108,34 @@ func (s *service) TrocaGrupo(ctx context.Context, userID, grupoID string) (*Logi
 		return nil, fmt.Errorf("auth.service.TrocaGrupo buscar usuário: %w", err)
 	}
 
+	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, s.papelNoGrupo(ctx, usuario, grupoID))
+}
+
+/*
+papelNoGrupo devolve o papel com que o token e emitido.
+
+Estava copiado em quatro lugares — Login, SelectGrupo, TrocaGrupo e Refresh —
+cada um com sua propria queda para usuarios.Role. Quatro copias de uma regra de
+autorizacao sao quatro chances de ela divergir, e a divergencia aqui nao da
+erro: da acesso a mais ou a menos do que devia.
+
+A queda silenciosa e mantida de proposito, nao esquecida: GetRoleNoGrupo ja tem
+tres niveis internos de fallback para bancos com migrations pendentes, e so
+devolve erro quando nem usuarios.role foi legivel. Nesse ponto, negar o login
+seria a resposta correta — mas mudar isso muda comportamento, e este passo
+deliberadamente nao muda nenhum. Fica com a fase que troca a emissao do token.
+
+A regra nova, por contexto, esta em RoleEfetiva (contexto.go), ja testada e
+ainda nao ligada: liga-la aqui tiraria do admin global o papel admin_global no
+token, e com ele o acesso ao painel de sync — que e exatamente o corte da fase
+seguinte.
+*/
+func (s *service) papelNoGrupo(ctx context.Context, usuario *Usuario, grupoID string) string {
 	role, _ := s.repo.GetRoleNoGrupo(ctx, usuario.ID, grupoID)
 	if role == "" {
 		role = usuario.Role
 	}
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, role)
+	return role
 }
 
 func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role string) (*LoginResponse, error) {
@@ -191,10 +206,7 @@ func (s *service) Refresh(ctx context.Context, refreshToken string) (*LoginRespo
 	if grupoIDForRefresh == "" {
 		grupoIDForRefresh = usuario.GrupoID
 	}
-	roleForRefresh, _ := s.repo.GetRoleNoGrupo(ctx, usuario.ID, grupoIDForRefresh)
-	if roleForRefresh == "" {
-		roleForRefresh = usuario.Role
-	}
+	roleForRefresh := s.papelNoGrupo(ctx, usuario, grupoIDForRefresh)
 	accessToken, err := s.jwt.Generate(usuario.ID, grupoIDForRefresh, usuario.Email, roleForRefresh)
 	if err != nil {
 		return nil, fmt.Errorf("auth.service.Refresh gerar access token: %w", err)
