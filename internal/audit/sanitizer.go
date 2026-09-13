@@ -13,6 +13,11 @@ var sensitiveFields = []string{
 	"refresh_token",
 	"access_token",
 	"secret",
+	// A comparacao abaixo e por IGUALDADE, nao por substring: sem estes dois
+	// nomes exatos, a credencial do assistente de IA passaria em claro para
+	// audit_logs no PUT que a cadastra.
+	"api_key",
+	"ai_api_key",
 }
 
 // SanitizeBody recebe um JSON em string e substitui campos sensíveis por "***REDACTED***".

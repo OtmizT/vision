@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/go-chi/httprate"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 
@@ -22,6 +23,8 @@ import (
 	"omie-sync-api/internal/etl"
 	"omie-sync-api/internal/etl/progress"
 	"omie-sync-api/internal/grupos"
+	"omie-sync-api/internal/ia"
+	"omie-sync-api/internal/ia_config"
 	"omie-sync-api/internal/logger"
 	"omie-sync-api/internal/omie_config"
 	"omie-sync-api/internal/permissoes"
@@ -105,6 +108,35 @@ func main() {
 	querySvc := query.NewService()
 	queryHandler := query.NewHandler(querySvc, pool, jwtSvc)
 
+	// --- Assistente de IA ---
+	iaConfigRepo := ia_config.NewRepository(pool)
+	iaConfigSvc := ia_config.NewService(iaConfigRepo)
+	iaConfigHandler := ia_config.NewHandler(iaConfigSvc, jwtSvc)
+
+	iaRepo := ia.NewRepository(pool)
+	iaSvc := ia.NewService(pool, iaRepo, iaConfigSvc, log)
+
+	/*
+	 * Rate limit POR USUARIO, e nao por IP.
+	 *
+	 * Uma pergunta ao assistente custa dinheiro, entao o limite existe. Mas por
+	 * IP puniria o escritorio inteiro atras do mesmo NAT: um usuario esbarraria
+	 * no teto e derrubaria os colegas junto. Mesmo padrao do SQL Explorer.
+	 *
+	 * O limitador e criado UMA vez aqui: dentro do handler, cada request criaria
+	 * um limitador novo e nada seria limitado.
+	 */
+	iaRateLimiter := httprate.NewRateLimiter(20, 1*time.Minute, httprate.WithKeyFuncs(
+		func(r *http.Request) (string, error) {
+			claims, ok := auth.ClaimsFromContext(r.Context())
+			if !ok {
+				return httprate.KeyByIP(r)
+			}
+			return "ia:" + claims.UserID, nil
+		},
+	))
+	iaHandler := ia.NewHandler(iaSvc, jwtSvc, authRepo, iaRateLimiter.Handler)
+
 	// --- ETL Worker + Scheduler ---
 	executors := etl.NewAllExecutors(pool, log)
 	fetcher := worker.NewEmpresaFetcher(pool)
@@ -139,6 +171,12 @@ func main() {
 	deletionJob.Start()
 	defer deletionJob.Stop()
 
+	// Expurgo do historico do assistente. O ctx cancelado no shutdown encerra o
+	// laco; nao ha Stop() proprio porque o job nao guarda estado.
+	ctxExpurgo, pararExpurgo := context.WithCancel(context.Background())
+	defer pararExpurgo()
+	go ia.NovoExpurgador(iaRepo, log).Iniciar(ctxExpurgo)
+
 	// --- Router ---
 	router := server.NewRouter(server.Dependencies{
 		AuditRepo:         auditRepo,
@@ -151,6 +189,8 @@ func main() {
 		DadosHandler:      dadosHandler,
 		OmieConfigHandler: omieConfigHandler,
 		QueryHandler:      queryHandler,
+		IAHandler:         iaHandler,
+		IAConfigHandler:   iaConfigHandler,
 		Membros:           authRepo,
 		Logger:            log,
 	})

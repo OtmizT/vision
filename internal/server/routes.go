@@ -16,6 +16,8 @@ import (
 	"omie-sync-api/internal/dados"
 	"omie-sync-api/internal/empresas"
 	"omie-sync-api/internal/grupos"
+	"omie-sync-api/internal/ia"
+	"omie-sync-api/internal/ia_config"
 	"omie-sync-api/internal/omie_config"
 	"omie-sync-api/internal/permissoes"
 	"omie-sync-api/internal/query"
@@ -34,6 +36,8 @@ type Dependencies struct {
 	DadosHandler      *dados.Handler
 	OmieConfigHandler *omie_config.Handler
 	QueryHandler      *query.Handler
+	IAHandler         *ia.Handler
+	IAConfigHandler   *ia_config.Handler
 	// Membros verifica vínculo usuário×grupo nas rotas com {grupoID}.
 	Membros auth.MembroChecker
 	Logger  zerolog.Logger
@@ -101,6 +105,11 @@ func NewRouter(deps Dependencies) http.Handler {
 	r.Mount("/admin/grupos/{grupoID}/usuarios", deps.UsuariosHandler.Routes())
 	r.Mount("/admin/permissoes", deps.PermissoesHandler.Routes())
 	r.Mount("/admin/omie-config", deps.OmieConfigHandler.Routes())
+	r.Mount("/admin/ia-config", deps.IAConfigHandler.Routes())
+
+	// Assistente de IA. O rate limit por usuario e montado no proprio handler,
+	// com o limitador criado uma vez no wire.
+	r.Mount("/ia", deps.IAHandler.Routes())
 
 	// Admin Sync (Global)
 	r.Group(func(r chi.Router) {

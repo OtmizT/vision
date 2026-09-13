@@ -158,3 +158,34 @@ func TestSanitizeQuery_MalformadaNaoVazaNada(t *testing.T) {
 		t.Fatalf("got %q", got)
 	}
 }
+
+/*
+A credencial do assistente de IA.
+
+A comparação de isSensitive é por IGUALDADE, não por substring: `api_key` não
+casa com `secret` nem com `token`. Sem o nome exato na lista, o PUT que cadastra
+a chave gravaria ela em claro em audit_logs — uma tabela feita para ser lida
+depois, por gente que não precisa de credencial nenhuma.
+*/
+func TestSanitizeBody_ChaveDaIA(t *testing.T) {
+	corpo := `{"provedor":"deepseek","modelo":"deepseek-v4-flash","api_key":"sk-abc123secreta"}`
+	got := SanitizeBody(corpo)
+
+	if strings.Contains(got, "sk-abc123secreta") {
+		t.Fatalf("a chave foi para o log em claro: %s", got)
+	}
+	if !strings.Contains(got, "REDACTED") {
+		t.Fatalf("não redigiu: %s", got)
+	}
+	// O resto do corpo precisa sobreviver — a trilha existe para dizer o que
+	// mudou.
+	if !strings.Contains(got, "deepseek-v4-flash") {
+		t.Fatalf("redigiu demais: %s", got)
+	}
+}
+
+func TestSanitizeQuery_ChaveDaIA(t *testing.T) {
+	if got := SanitizeQuery("api_key=sk-abc123"); strings.Contains(got, "sk-abc123") {
+		t.Fatalf("a chave vazou pela query string: %q", got)
+	}
+}

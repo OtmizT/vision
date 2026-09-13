@@ -71,6 +71,45 @@ type EtlGrupo struct {
 	DeletedAt  pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type EtlIaConfig struct {
+	ID            int32              `json:"id"`
+	Provedor      string             `json:"provedor"`
+	Modelo        string             `json:"modelo"`
+	BaseUrl       string             `json:"base_url"`
+	ApiKey        string             `json:"api_key"`
+	MaxTokens     int32              `json:"max_tokens"`
+	TetoTokensDia int32              `json:"teto_tokens_dia"`
+	Ativo         bool               `json:"ativo"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	UpdatedBy     pgtype.UUID        `json:"updated_by"`
+}
+
+type EtlIaConversa struct {
+	ID        pgtype.UUID        `json:"id"`
+	GrupoID   pgtype.UUID        `json:"grupo_id"`
+	UsuarioID pgtype.UUID        `json:"usuario_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type EtlIaGrupo struct {
+	GrupoID   pgtype.UUID        `json:"grupo_id"`
+	Ativa     bool               `json:"ativa"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	UpdatedBy pgtype.UUID        `json:"updated_by"`
+}
+
+type EtlIaMensagen struct {
+	ID         pgtype.UUID        `json:"id"`
+	ConversaID pgtype.UUID        `json:"conversa_id"`
+	Papel      string             `json:"papel"`
+	Conteudo   string             `json:"conteudo"`
+	Spec       []byte             `json:"spec"`
+	Fonte      []byte             `json:"fonte"`
+	Tokens     int32              `json:"tokens"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
 type EtlOmieEndpointConfig struct {
 	ID           pgtype.UUID        `json:"id"`
 	Modulo       string             `json:"modulo"`

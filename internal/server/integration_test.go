@@ -16,6 +16,8 @@ import (
 	"omie-sync-api/internal/dados"
 	"omie-sync-api/internal/empresas"
 	"omie-sync-api/internal/grupos"
+	"omie-sync-api/internal/ia"
+	"omie-sync-api/internal/ia_config"
 	"omie-sync-api/internal/omie_config"
 	"omie-sync-api/internal/permissoes"
 	syncsvc "omie-sync-api/internal/sync"
@@ -53,6 +55,8 @@ func buildRouter(t *testing.T) http.Handler {
 		PermissoesHandler: permissoes.NewHandler(permissoesSvc, jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omieConfigSvc, jwtSvc),
+		IAHandler:         ia.NewHandler(&nullIASvc{}, jwtSvc, nil, semLimite),
+		IAConfigHandler:   ia_config.NewHandler(&nullIAConfigSvc{}, jwtSvc),
 		Logger:            zerolog.Nop(),
 	})
 }
@@ -111,6 +115,8 @@ func TestIntegration_AuditMiddlewareRunsOnAllRoutes(t *testing.T) {
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
+		IAHandler:         ia.NewHandler(&nullIASvc{}, jwtSvc, nil, semLimite),
+		IAConfigHandler:   ia_config.NewHandler(&nullIAConfigSvc{}, jwtSvc),
 		Logger:            zerolog.Nop(),
 	})
 
@@ -521,6 +527,8 @@ func TestIntegration_AuditoriaRegistraQuemFez(t *testing.T) {
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
+		IAHandler:         ia.NewHandler(&nullIASvc{}, jwtSvc, nil, semLimite),
+		IAConfigHandler:   ia_config.NewHandler(&nullIAConfigSvc{}, jwtSvc),
 		Logger:            zerolog.Nop(),
 	})
 
@@ -554,6 +562,8 @@ func TestIntegration_AuditoriaRegistraAutorDeAcessoNegado(t *testing.T) {
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
+		IAHandler:         ia.NewHandler(&nullIASvc{}, jwtSvc, nil, semLimite),
+		IAConfigHandler:   ia_config.NewHandler(&nullIAConfigSvc{}, jwtSvc),
 		Logger:            zerolog.Nop(),
 	})
 
@@ -573,5 +583,109 @@ func TestIntegration_AuditoriaRegistraAutorDeAcessoNegado(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("nenhuma entrada de auditoria gravada")
+	}
+}
+
+// --- dublês do assistente de IA ---
+
+// semLimite substitui o rate limiter nos testes: o limitador real guardaria
+// estado entre casos e faria um teste derrubar o seguinte.
+func semLimite(next http.Handler) http.Handler { return next }
+
+type nullIASvc struct{}
+
+func (s *nullIASvc) Perguntar(_ context.Context, _, _ string, _ ia.PerguntaRequest) (*ia.Resposta, error) {
+	return &ia.Resposta{Tipo: ia.RespostaTexto, Texto: "ok"}, nil
+}
+func (s *nullIASvc) Historico(_ context.Context, _, _ string) ([]ia.Mensagem, error) {
+	return nil, nil
+}
+func (s *nullIASvc) Limpar(_ context.Context, _, _ string) error { return nil }
+func (s *nullIASvc) Disponivel(_ context.Context, _ string) (bool, error) {
+	return false, nil
+}
+
+type nullIAConfigSvc struct{}
+
+func (s *nullIAConfigSvc) Get(_ context.Context) (ia_config.Response, error) {
+	return ia_config.Response{}, nil
+}
+func (s *nullIAConfigSvc) Update(_ context.Context, _ ia_config.UpdateRequest, _ string) (ia_config.Response, error) {
+	return ia_config.Response{}, nil
+}
+func (s *nullIAConfigSvc) ListGrupos(_ context.Context) ([]ia_config.GrupoIA, error) { return nil, nil }
+func (s *nullIAConfigSvc) SetGrupo(_ context.Context, _ string, _ bool, _ string) error {
+	return nil
+}
+func (s *nullIAConfigSvc) ParaUso(_ context.Context) (*ia_config.Config, error) {
+	return &ia_config.Config{}, nil
+}
+func (s *nullIAConfigSvc) AtivaNoGrupo(_ context.Context, _ string) (bool, error) { return false, nil }
+
+/*
+As rotas do assistente exigem grupo e papel certos.
+
+A config é de plataforma (admin global); o chat é de quem está dentro de um
+grupo. Trocar um pelo outro abriria a credencial para admin de cliente, ou
+deixaria o admin global sem o painel que ele administra.
+*/
+func TestIntegration_RotasDoAssistente(t *testing.T) {
+	router := buildRouter(t)
+	jwtSvc := auth.NewJWTService(testSecret)
+
+	const grupoA = "11111111-1111-1111-1111-111111111111"
+	adminGrupo, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo", auth.ContextoGrupo, false)
+	viewer, _ := jwtSvc.Generate("u-v", grupoA, "v@a.com", "viewer", auth.ContextoGrupo, false)
+	global, _ := jwtSvc.Generate("u-g", "", "g@p.com", "admin_global", auth.ContextoPlataforma, false)
+
+	casos := []struct {
+		nome         string
+		method, path string
+		token        string
+		proibido     bool
+	}{
+		// A credencial da IA é de plataforma: quem administra um cliente não a vê.
+		{"admin de grupo não vê a config da IA", http.MethodGet, "/admin/ia-config", adminGrupo, true},
+		{"viewer não vê a config da IA", http.MethodGet, "/admin/ia-config", viewer, true},
+		{"admin global vê a config da IA", http.MethodGet, "/admin/ia-config", global, false},
+		{"admin global lista os grupos", http.MethodGet, "/admin/ia-config/grupos", global, false},
+
+		// O chat é para quem trabalha dentro do grupo — viewer incluído.
+		{"admin de grupo alcança o chat", http.MethodGet, "/ia/disponivel", adminGrupo, false},
+		{"viewer alcança o chat", http.MethodGet, "/ia/disponivel", viewer, false},
+	}
+
+	for _, c := range casos {
+		t.Run(c.nome, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(c.method, c.path, nil)
+			req.Header.Set("Authorization", "Bearer "+c.token)
+			router.ServeHTTP(rr, req)
+
+			if c.proibido && rr.Code != http.StatusForbidden {
+				t.Fatalf("deveria ser 403, got %d", rr.Code)
+			}
+			if !c.proibido && (rr.Code == http.StatusForbidden || rr.Code == http.StatusNotFound) {
+				t.Fatalf("acesso legítimo barrado: got %d", rr.Code)
+			}
+		})
+	}
+}
+
+// Sem token não há assistente — o chat fala de dinheiro de cliente.
+func TestIntegration_AssistenteExigeAutenticacao(t *testing.T) {
+	router := buildRouter(t)
+
+	for _, r := range []struct{ method, path string }{
+		{http.MethodPost, "/ia/chat"},
+		{http.MethodGet, "/ia/conversa"},
+		{http.MethodGet, "/ia/disponivel"},
+		{http.MethodGet, "/admin/ia-config"},
+	} {
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, httptest.NewRequest(r.method, r.path, nil))
+		if rr.Code != http.StatusUnauthorized {
+			t.Errorf("%s %s: got %d, want 401", r.method, r.path, rr.Code)
+		}
 	}
 }
