@@ -56,6 +56,11 @@
         <div class="user-info">
           <div class="user-name">{{ auth.user?.nome ?? '...' }}</div>
           <div class="user-role">{{ roleLabel }}</div>
+          <!-- Sem este badge, o admin global dentro de um grupo se le apenas
+               como "Admin Grupo", sem nenhuma pista de onde esta. -->
+          <div class="user-contexto" :class="{ plataforma: auth.noContextoPlataforma }">
+            {{ contextoLabel }}
+          </div>
         </div>
         <button class="logout-mini" @click="handleLogout" title="Sair">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -75,7 +80,7 @@ import {
   IconGrid, IconBuilding, IconFactory,
   IconUsers, IconKey, IconSync, IconUser, IconDatabase
 } from '@/components/ui/icons'
-import { temDashboard } from '@/utils/navegacao'
+import { temDashboard, rotuloContexto } from '@/utils/navegacao'
 
 const IconSwitch = {
   template: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>`
@@ -111,14 +116,18 @@ const roleLabel = computed(() => {
   return labels[auth.user?.role ?? 'viewer'] ?? ''
 })
 
+const contextoLabel = computed(() => rotuloContexto(auth.contexto, auth.nomeGrupoAtivo))
+
 const navSections = computed(() => {
   const role = auth.user?.role
   const sections: Array<{ label: string; items: Array<{ to: string; label: string; icon: unknown }> }> = []
 
-  // O admin global nao tem Dashboard: ele administra a plataforma e nao consome
-  // os dados financeiros de nenhum grupo. Ver utils/navegacao.ts — a mesma
-  // funcao decide o item do menu e a rota inicial, senao os dois divergem.
-  if (temDashboard(role)) {
+  // O Dashboard existe dentro de um grupo, nao na plataforma: la se administra
+  // o produto, nao se consome dado financeiro de cliente nenhum. A decisao e
+  // por CONTEXTO, e nao por papel — o mesmo admin global tem Dashboard quando
+  // entra num grupo. Ver utils/navegacao.ts, a mesma funcao que decide a rota
+  // inicial: se divergirem, o item some do menu e a URL continua aberta.
+  if (temDashboard(auth.contexto)) {
     sections.push({
       label: 'PRINCIPAL',
       items: [{ to: '/', label: 'Dashboard', icon: IconGrid }]
@@ -149,8 +158,10 @@ const navSections = computed(() => {
   if (role === 'admin_global' || role === 'admin_grupo') {
     systemItems.push({ to: '/sql-explorer', label: 'SQL Explorer', icon: IconDatabase })
   }
-  if (auth.meusGrupos.length > 1) {
-    systemItems.push({ to: '/select-grupo', label: 'Trocar Grupo', icon: IconSwitch })
+  // "Trocar Contexto" e nao "Trocar Grupo": para o admin global, Plataforma e
+  // um destino como qualquer outro, e ele pode ter um grupo so.
+  if (auth.meusGrupos.length > 1 || auth.podePlataforma) {
+    systemItems.push({ to: '/select-grupo', label: 'Trocar Contexto', icon: IconSwitch })
   }
   systemItems.push({ to: '/perfil', label: 'Perfil', icon: IconUser })
   sections.push({ label: 'SISTEMA', items: systemItems })
@@ -288,6 +299,21 @@ const navSections = computed(() => {
 
 .user-name { font-size: var(--fs-xs); font-weight: 700; white-space: nowrap; }
 .user-role { font-family: var(--font-display); font-size: var(--fs-xs); color: var(--text-dim); }
+
+.user-contexto {
+  margin-top: 3px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* A plataforma se destaca de proposito: e o contexto em que uma acao alcanca
+   todos os clientes de uma vez. */
+.user-contexto.plataforma {
+  color: var(--primary);
+}
 
 .logout-mini {
   background: transparent; border: none; cursor: pointer;

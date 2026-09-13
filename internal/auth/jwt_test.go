@@ -11,7 +11,7 @@ const testSecret = "test-secret-minimo-32-caracteres-xpto"
 func TestJWT_GenerateAndValidate(t *testing.T) {
 	svc := NewJWTService(testSecret)
 
-	token, err := svc.Generate("user-1", "grupo-1", "user@test.com", "admin_grupo")
+	token, err := svc.Generate("user-1", "grupo-1", "user@test.com", "admin_grupo", ContextoGrupo)
 	if err != nil {
 		t.Fatalf("Generate: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestJWT_ValidateWrongSecret(t *testing.T) {
 	svc1 := NewJWTService(testSecret)
 	svc2 := NewJWTService("outro-secret-completamente-diferente-aqui")
 
-	token, _ := svc1.Generate("u1", "g1", "a@b.com", "viewer")
+	token, _ := svc1.Generate("u1", "g1", "a@b.com", "viewer", ContextoGrupo)
 
 	_, err := svc2.Validate(token)
 	if err == nil {
@@ -75,7 +75,7 @@ func TestJWT_ValidateWrongAlgorithm(t *testing.T) {
 func TestJWT_ExpiresIn15Minutes(t *testing.T) {
 	svc := NewJWTService(testSecret)
 
-	token, _ := svc.Generate("u1", "g1", "a@b.com", "viewer")
+	token, _ := svc.Generate("u1", "g1", "a@b.com", "viewer", ContextoGrupo)
 	claims, err := svc.Validate(token)
 	if err != nil {
 		t.Fatalf("Validate: %v", err)

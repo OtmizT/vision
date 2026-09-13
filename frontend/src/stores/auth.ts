@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/api/client'
+import { contextoOuGrupo, type Contexto } from '@/utils/navegacao'
 
 export interface User {
   id:       string
@@ -8,6 +9,14 @@ export interface User {
   nome:     string
   email:    string
   role:     'admin_global' | 'admin_grupo' | 'viewer'
+  /*
+   * Onde a pessoa está: administrando a plataforma ou dentro de um cliente.
+   *
+   * Vem do JWT, via /auth/me, e não do banco — o papel gravado em usuarios.role
+   * diz o que a conta PODE ser, e o contexto diz o que ela é agora. Com um
+   * admin global que também entra em grupos, os dois divergem o tempo todo.
+   */
+  contexto: Contexto
 }
 
 export interface GrupoInfo {
@@ -27,8 +36,19 @@ export const useAuthStore = defineStore('auth', () => {
   const pendingGrupos = ref<GrupoInfo[]>(JSON.parse(localStorage.getItem('pending_grupos') || '[]'))
   const meusGrupos    = ref<GrupoInfo[]>(JSON.parse(localStorage.getItem('meus_grupos') || '[]'))
 
+  // Quem pode escolher Plataforma na tela de seleção. Vem do servidor (o login
+  // e /auth/contextos respondem), e não de um `role === 'admin_global'` aqui:
+  // a lista de destinos é decidida num lugar só.
+  const podePlataforma = ref(localStorage.getItem('pode_plataforma') === '1')
+
   const isAuthenticated  = computed(() => !!accessToken.value)
   const needsGroupSelect = computed(() => !!preAuthToken.value && !accessToken.value)
+  /** Contexto ativo. Ausente é lido como 'grupo' — omissão não promove. */
+  const contexto = computed<Contexto>(() => contextoOuGrupo(user.value?.contexto))
+  const noContextoPlataforma = computed(() => contexto.value === 'plataforma')
+  /** Nome do grupo ativo, para o badge. */
+  const nomeGrupoAtivo = computed(() =>
+    meusGrupos.value.find(g => g.id === user.value?.grupo_id)?.nome ?? '')
   const isAdminGlobal    = computed(() => user.value?.role === 'admin_global')
   const isAdminGrupo     = computed(() => user.value?.role === 'admin_grupo')
   const isViewer         = computed(() => user.value?.role === 'viewer')
@@ -57,6 +77,8 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('pre_auth_token')
     localStorage.removeItem('pending_grupos')
     localStorage.removeItem('meus_grupos')
+    podePlataforma.value = false
+    localStorage.removeItem('pode_plataforma')
   }
 
   async function login(email: string, password: string) {
@@ -64,11 +86,15 @@ export const useAuthStore = defineStore('auth', () => {
     const resp = data.data
 
     if (resp.needs_select) {
-      // Múltiplos grupos — salva estado de seleção pendente
-      preAuthToken.value  = resp.pre_auth_token
-      pendingGrupos.value = resp.grupos ?? []
+      // Seleção pendente. O admin global sempre cai aqui, mesmo com um grupo
+      // só: sem Plataforma na lista ele entraria direto no grupo e o painel
+      // dele ficaria sem caminho de volta que não fosse deslogar.
+      preAuthToken.value   = resp.pre_auth_token
+      pendingGrupos.value  = resp.grupos ?? []
+      podePlataforma.value = !!resp.pode_plataforma
       localStorage.setItem('pre_auth_token',  resp.pre_auth_token)
       localStorage.setItem('pending_grupos', JSON.stringify(resp.grupos ?? []))
+      localStorage.setItem('pode_plataforma', resp.pode_plataforma ? '1' : '0')
       return
     }
 
@@ -77,9 +103,11 @@ export const useAuthStore = defineStore('auth', () => {
     await refreshMeusGrupos()
   }
 
-  async function selectGrupo(grupoID: string) {
+  // grupoID vazio só faz sentido no contexto de plataforma, que não tem grupo.
+  async function selectContexto(ctx: Contexto, grupoID = '') {
     const { data } = await api.post('/auth/select-grupo', {
       pre_auth_token: preAuthToken.value,
+      contexto: ctx,
       grupo_id: grupoID
     })
     setTokens(data.data.access_token, data.data.refresh_token)
@@ -87,11 +115,24 @@ export const useAuthStore = defineStore('auth', () => {
     await refreshMeusGrupos()
   }
 
-  async function trocaGrupo(grupoID: string) {
-    const { data } = await api.post('/auth/troca-grupo', { grupo_id: grupoID })
+  async function trocaContexto(ctx: Contexto, grupoID = '') {
+    const { data } = await api.post('/auth/troca-grupo', { contexto: ctx, grupo_id: grupoID })
     setTokens(data.data.access_token, data.data.refresh_token)
     await fetchMe()
     await refreshMeusGrupos()
+  }
+
+  // Mantidos para os chamadores que só trocam de grupo.
+  const selectGrupo = (grupoID: string) => selectContexto('grupo', grupoID)
+  const trocaGrupo  = (grupoID: string) => trocaContexto('grupo', grupoID)
+
+  /** Destinos possíveis para a tela de troca de contexto. */
+  async function fetchContextos(): Promise<{ pode_plataforma: boolean; grupos: GrupoInfo[] }> {
+    const { data } = await api.get('/auth/contextos')
+    const resp = data.data ?? {}
+    podePlataforma.value = !!resp.pode_plataforma
+    localStorage.setItem('pode_plataforma', resp.pode_plataforma ? '1' : '0')
+    return { pode_plataforma: !!resp.pode_plataforma, grupos: resp.grupos ?? [] }
   }
 
   async function fetchGrupos(): Promise<GrupoInfo[]> {
@@ -164,9 +205,11 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    accessToken, refreshToken, user, preAuthToken, pendingGrupos, meusGrupos,
+    accessToken, refreshToken, user, preAuthToken, pendingGrupos, meusGrupos, podePlataforma,
     isAuthenticated, needsGroupSelect, isAdminGlobal, isAdminGrupo, isViewer, isAdmin,
-    login, selectGrupo, trocaGrupo, fetchGrupos, refreshMeusGrupos,
+    contexto, noContextoPlataforma, nomeGrupoAtivo,
+    login, selectGrupo, trocaGrupo, selectContexto, trocaContexto,
+    fetchGrupos, fetchContextos, refreshMeusGrupos,
     logout, refresh, fetchMe, init, ensureLoaded, clearTokens, setTokens
   }
 })

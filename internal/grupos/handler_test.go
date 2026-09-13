@@ -48,7 +48,7 @@ func newTestHandler(svc Service) *Handler {
 func bearerToken(t *testing.T, role string) string {
 	t.Helper()
 	jwtSvc := auth.NewJWTService(testJWTSecret)
-	token, err := jwtSvc.Generate("user-1", "grupo-1", "u@test.com", role)
+	token, err := jwtSvc.Generate("user-1", "grupo-1", "u@test.com", role, auth.ContextoGrupo)
 	if err != nil {
 		t.Fatalf("gerar token: %v", err)
 	}

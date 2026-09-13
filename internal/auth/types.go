@@ -25,6 +25,10 @@ type RefreshToken struct {
 	// não teria como saber qual grupo o usuário multi-grupo selecionou — o refresh
 	// token é opaco e não carrega claims.
 	GrupoID string
+	// Contexto em que a sessão foi aberta. Sem ele a renovação silenciosa
+	// devolveria a pessoa a um contexto que ela não escolheu — e grupo_id NULL
+	// não serve para deduzir, porque já significa duas coisas.
+	Contexto Contexto
 }
 
 type GrupoInfo struct {
@@ -48,19 +52,38 @@ type LoginResponse struct {
 	RefreshToken string `json:"refresh_token,omitempty"`
 	ExpiresIn    int    `json:"expires_in,omitempty"`
 
-	// Cenário 2 — seleção de grupo pendente
-	NeedsSelect   bool        `json:"needs_select,omitempty"`
-	PreAuthToken  string      `json:"pre_auth_token,omitempty"`
-	Grupos        []GrupoInfo `json:"grupos,omitempty"`
+	// Contexto e GrupoID dizem onde a sessão nasceu. O cliente precisa dos dois
+	// para montar menu e badge sem redecidir a regra por conta própria.
+	Contexto Contexto `json:"contexto,omitempty"`
+	GrupoID  string   `json:"grupo_id,omitempty"`
+
+	// Cenário 2 — seleção de contexto pendente
+	NeedsSelect  bool        `json:"needs_select,omitempty"`
+	PreAuthToken string      `json:"pre_auth_token,omitempty"`
+	Grupos       []GrupoInfo `json:"grupos,omitempty"`
+	// PodePlataforma diz se "Plataforma" entra na tela de escolha. Vem do
+	// servidor para a lista de destinos não ser calculada também no cliente.
+	PodePlataforma bool `json:"pode_plataforma,omitempty"`
+}
+
+// ContextosResponse é o corpo de GET /auth/contextos.
+type ContextosResponse struct {
+	PodePlataforma bool        `json:"pode_plataforma"`
+	Grupos         []GrupoInfo `json:"grupos"`
 }
 
 type SelectGrupoRequest struct {
 	PreAuthToken string `json:"pre_auth_token"`
-	GrupoID      string `json:"grupo_id"`
+	// Contexto vazio é lido como "grupo": é o único valor que um cliente antigo
+	// poderia ter querido dizer, e nunca concede a plataforma por omissão.
+	Contexto Contexto `json:"contexto"`
+	GrupoID  string   `json:"grupo_id"`
 }
 
 type TrocaGrupoRequest struct {
-	GrupoID string `json:"grupo_id"`
+	// Contexto vazio e lido como "grupo". Ver contextoOuGrupo no handler.
+	Contexto Contexto `json:"contexto"`
+	GrupoID  string   `json:"grupo_id"`
 }
 
 type RefreshRequest struct {
@@ -68,9 +91,10 @@ type RefreshRequest struct {
 }
 
 type MeResponse struct {
-	ID      string `json:"id"`
-	GrupoID string `json:"grupo_id"`
-	Nome    string `json:"nome"`
-	Email   string `json:"email"`
-	Role    string `json:"role"`
+	ID       string   `json:"id"`
+	GrupoID  string   `json:"grupo_id"`
+	Nome     string   `json:"nome"`
+	Email    string   `json:"email"`
+	Role     string   `json:"role"`
+	Contexto Contexto `json:"contexto"`
 }

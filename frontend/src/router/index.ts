@@ -144,9 +144,10 @@ router.beforeEach(async to => {
   // Rota pública
   if (to.meta.public) {
     if (auth.needsGroupSelect) return { name: 'SelectGrupo' }
-    // Quem ja esta autenticado vai para a tela do proprio papel — nem todo
-    // mundo tem Dashboard. Ver utils/navegacao.ts.
-    if (auth.isAuthenticated)  return rotaInicial(auth.user?.role)
+    // Quem ja esta autenticado vai para a tela do contexto em que esta — a
+    // plataforma nao tem Dashboard, o grupo nao tem Sync Control. Ver
+    // utils/navegacao.ts.
+    if (auth.isAuthenticated)  return rotaInicial(auth.contexto)
     return true
   }
 

@@ -34,6 +34,7 @@ func (h *Handler) Routes() http.Handler {
 	r.With(httprate.LimitByIP(20, 1*time.Minute)).Post("/refresh", h.Refresh)
 	r.With(RequireAuth(h.jwtSvc)).Get("/me", h.Me)
 	r.With(RequireAuth(h.jwtSvc)).Get("/grupos", h.Grupos)
+	r.With(RequireAuth(h.jwtSvc)).Get("/contextos", h.Contextos)
 	r.With(RequireAuth(h.jwtSvc)).Post("/troca-grupo", h.TrocaGrupo)
 
 	return r
@@ -127,12 +128,17 @@ func (h *Handler) SelectGrupo(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusUnprocessableEntity, "body inválido", err)
 		return
 	}
-	if req.PreAuthToken == "" || req.GrupoID == "" {
-		response.Error(w, http.StatusUnprocessableEntity, "pre_auth_token e grupo_id são obrigatórios", nil)
+	if req.PreAuthToken == "" {
+		response.Error(w, http.StatusUnprocessableEntity, "pre_auth_token é obrigatório", nil)
+		return
+	}
+	contexto := contextoOuGrupo(req.Contexto)
+	if contexto == ContextoGrupo && req.GrupoID == "" {
+		response.Error(w, http.StatusUnprocessableEntity, "grupo_id é obrigatório no contexto de grupo", nil)
 		return
 	}
 
-	resp, err := h.svc.SelectGrupo(r.Context(), req.PreAuthToken, req.GrupoID)
+	resp, err := h.svc.SelectGrupo(r.Context(), req.PreAuthToken, contexto, req.GrupoID)
 	if err != nil {
 		if ae, ok := apperror.IsAppError(err); ok {
 			response.FromAppError(w, ae)
@@ -158,12 +164,13 @@ func (h *Handler) TrocaGrupo(w http.ResponseWriter, r *http.Request) {
 		response.Error(w, http.StatusUnprocessableEntity, "body inválido", err)
 		return
 	}
-	if req.GrupoID == "" {
-		response.Error(w, http.StatusUnprocessableEntity, "grupo_id é obrigatório", nil)
+	contexto := contextoOuGrupo(req.Contexto)
+	if contexto == ContextoGrupo && req.GrupoID == "" {
+		response.Error(w, http.StatusUnprocessableEntity, "grupo_id é obrigatório no contexto de grupo", nil)
 		return
 	}
 
-	resp, err := h.svc.TrocaGrupo(r.Context(), claims.UserID, req.GrupoID)
+	resp, err := h.svc.TrocaGrupo(r.Context(), claims.UserID, contexto, req.GrupoID)
 	if err != nil {
 		if ae, ok := apperror.IsAppError(err); ok {
 			response.FromAppError(w, ae)
@@ -174,6 +181,37 @@ func (h *Handler) TrocaGrupo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.OK(w, resp)
+}
+
+/*
+contextoOuGrupo lê um contexto vindo do cliente.
+
+Vazio vira "grupo", e só isso: é o que um cliente antigo poderia ter querido
+dizer, e nunca concede a plataforma por omissão. Valor desconhecido também cai
+em grupo — quem decide se pode mesmo entrar é RoleEfetiva, no service; aqui só
+se normaliza a entrada.
+*/
+func contextoOuGrupo(c Contexto) Contexto {
+	if c == ContextoPlataforma {
+		return ContextoPlataforma
+	}
+	return ContextoGrupo
+}
+
+// GET /auth/contextos
+func (h *Handler) Contextos(w http.ResponseWriter, r *http.Request) {
+	claims, ok := ClaimsFromContext(r.Context())
+	if !ok {
+		response.Unauthorized(w, "não autenticado")
+		return
+	}
+
+	ctxs, err := h.svc.GetContextos(r.Context(), claims.UserID)
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "erro ao buscar contextos", err)
+		return
+	}
+	response.OK(w, ctxs)
 }
 
 // GET /auth/me
@@ -190,10 +228,11 @@ func (h *Handler) Me(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Role e GrupoID vêm do JWT — refletem o contexto do grupo atual,
-	// não o valor estático do banco (que pode diferir após troca de grupo).
-	me.Role    = claims.Role
+	// Role, GrupoID e Contexto vêm do JWT — refletem onde a pessoa está agora,
+	// não o valor estático do banco (que pode diferir após troca de contexto).
+	me.Role = claims.Role
 	me.GrupoID = claims.GrupoID
+	me.Contexto = claims.Contexto
 
 	response.OK(w, me)
 }

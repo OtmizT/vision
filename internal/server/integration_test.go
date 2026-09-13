@@ -145,7 +145,7 @@ func TestIntegration_LoginEndpointReachable(t *testing.T) {
 
 func TestIntegration_AllAdminRoutesExist(t *testing.T) {
 	router := buildRouter(t)
-	tok, _ := auth.NewJWTService(testSecret).Generate("u1", "g1", "u@t.com", "admin_global")
+	tok, _ := auth.NewJWTService(testSecret).Generate("u1", "g1", "u@t.com", "admin_global", auth.ContextoGrupo)
 
 	paths := []struct{ method, path string }{
 		{http.MethodGet, "/admin/grupos"},
@@ -196,14 +196,17 @@ type nullAuthSvc struct{}
 func (s *nullAuthSvc) Login(_ context.Context, _, _ string) (*auth.LoginResponse, error) {
 	return nil, nil
 }
-func (s *nullAuthSvc) SelectGrupo(_ context.Context, _, _ string) (*auth.LoginResponse, error) {
+func (s *nullAuthSvc) SelectGrupo(_ context.Context, _ string, _ auth.Contexto, _ string) (*auth.LoginResponse, error) {
 	return nil, nil
 }
-func (s *nullAuthSvc) TrocaGrupo(_ context.Context, _, _ string) (*auth.LoginResponse, error) {
+func (s *nullAuthSvc) TrocaGrupo(_ context.Context, _ string, _ auth.Contexto, _ string) (*auth.LoginResponse, error) {
 	return nil, nil
 }
 func (s *nullAuthSvc) GetGrupos(_ context.Context, _ string) ([]auth.GrupoInfo, error) {
 	return nil, nil
+}
+func (s *nullAuthSvc) GetContextos(_ context.Context, _ string) (*auth.ContextosResponse, error) {
+	return &auth.ContextosResponse{}, nil
 }
 func (s *nullAuthSvc) Logout(_ context.Context, _ string) error { return nil }
 func (s *nullAuthSvc) Refresh(_ context.Context, _ string) (*auth.LoginResponse, error) {
@@ -417,8 +420,8 @@ func TestIntegration_IsolamentoEntreClientes(t *testing.T) {
 	const grupoA = "11111111-1111-1111-1111-111111111111"
 	const grupoB = "22222222-2222-2222-2222-222222222222"
 
-	viewer, _ := jwtSvc.Generate("u-v", grupoA, "v@a.com", "viewer")
-	adminA, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo")
+	viewer, _ := jwtSvc.Generate("u-v", grupoA, "v@a.com", "viewer", auth.ContextoGrupo)
+	adminA, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo", auth.ContextoGrupo)
 
 	casos := []struct {
 		nome         string
@@ -455,8 +458,8 @@ func TestIntegration_AcessoLegitimoContinuaPassando(t *testing.T) {
 	jwtSvc := auth.NewJWTService(testSecret)
 
 	const grupoA = "11111111-1111-1111-1111-111111111111"
-	adminA, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo")
-	global, _ := jwtSvc.Generate("u-g", "", "g@p.com", "admin_global")
+	adminA, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo", auth.ContextoGrupo)
+	global, _ := jwtSvc.Generate("u-g", "", "g@p.com", "admin_global", auth.ContextoPlataforma)
 
 	casos := []struct {
 		nome         string
@@ -518,7 +521,7 @@ func TestIntegration_AuditoriaRegistraQuemFez(t *testing.T) {
 		Logger:            zerolog.Nop(),
 	})
 
-	tok, _ := jwtSvc.Generate("u-77", "g-1", "ana@alpha.com", "admin_global")
+	tok, _ := jwtSvc.Generate("u-77", "g-1", "ana@alpha.com", "admin_global", auth.ContextoGrupo)
 	req := httptest.NewRequest(http.MethodGet, "/admin/grupos", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	router.ServeHTTP(httptest.NewRecorder(), req)
@@ -551,7 +554,7 @@ func TestIntegration_AuditoriaRegistraAutorDeAcessoNegado(t *testing.T) {
 		Logger:            zerolog.Nop(),
 	})
 
-	tok, _ := jwtSvc.Generate("u-88", "11111111-1111-1111-1111-111111111111", "mal@a.com", "admin_grupo")
+	tok, _ := jwtSvc.Generate("u-88", "11111111-1111-1111-1111-111111111111", "mal@a.com", "admin_grupo", auth.ContextoGrupo)
 	req := httptest.NewRequest(http.MethodGet, "/admin/grupos/22222222-2222-2222-2222-222222222222/usuarios", nil)
 	req.Header.Set("Authorization", "Bearer "+tok)
 	rr := httptest.NewRecorder()

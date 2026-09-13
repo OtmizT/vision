@@ -16,9 +16,10 @@ const refreshTokenDuration = 7 * 24 * time.Hour
 
 type Service interface {
 	Login(ctx context.Context, email, password string) (*LoginResponse, error)
-	SelectGrupo(ctx context.Context, preAuthToken, grupoID string) (*LoginResponse, error)
-	TrocaGrupo(ctx context.Context, userID, grupoID string) (*LoginResponse, error)
+	SelectGrupo(ctx context.Context, preAuthToken string, contexto Contexto, grupoID string) (*LoginResponse, error)
+	TrocaGrupo(ctx context.Context, userID string, contexto Contexto, grupoID string) (*LoginResponse, error)
 	GetGrupos(ctx context.Context, userID string) ([]GrupoInfo, error)
+	GetContextos(ctx context.Context, userID string) (*ContextosResponse, error)
 	Logout(ctx context.Context, refreshToken string) error
 	Refresh(ctx context.Context, refreshToken string) (*LoginResponse, error)
 	Me(ctx context.Context, userID string) (*MeResponse, error)
@@ -50,8 +51,9 @@ func (s *service) Login(ctx context.Context, email, password string) (*LoginResp
 	// Buscar grupos via junction table (fallback para grupo_id legado se tabela ainda não existe)
 	grupos, _ := s.repo.GetGruposByUsuarioID(ctx, usuario.ID)
 
-	// Múltiplos grupos: exige seleção antes de emitir access token
-	if len(grupos) > 1 {
+	decisao := DecidirEntrada(usuario.Role, grupos, usuario.GrupoID)
+
+	if decisao.PedirSelecao {
 		preAuthToken, err := s.jwt.GeneratePreAuth(usuario.ID, usuario.Email)
 		if err != nil {
 			return nil, fmt.Errorf("auth.service.Login gerar pre-auth token: %w", err)
@@ -60,30 +62,47 @@ func (s *service) Login(ctx context.Context, email, password string) (*LoginResp
 			NeedsSelect:  true,
 			PreAuthToken: preAuthToken,
 			Grupos:       grupos,
+			// O admin global com um grupo so tambem cai aqui: sem Plataforma na
+			// lista ele entraria direto no grupo, e o painel dele ficaria sem
+			// caminho de volta que nao fosse deslogar.
+			PodePlataforma: usuario.Role == RolePlataforma,
 		}, nil
 	}
 
-	// Único grupo ou fallback para grupo_id legado
-	grupoID := usuario.GrupoID
-	if len(grupos) == 1 {
-		grupoID = grupos[0].ID
-	}
-
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, s.papelNoGrupo(ctx, usuario, grupoID))
+	return s.emitirNoContexto(ctx, usuario, decisao.Contexto, decisao.GrupoID)
 }
 
-func (s *service) SelectGrupo(ctx context.Context, preAuthToken, grupoID string) (*LoginResponse, error) {
+/*
+emitirNoContexto e o unico lugar que decide o papel do token.
+
+Toda entrada — login, selecao, troca de contexto e renovacao — passa por aqui e
+por RoleEfetiva, que e pura e testada. Antes cada um desses quatro caminhos
+carregava sua propria copia da regra.
+*/
+func (s *service) emitirNoContexto(ctx context.Context, usuario *Usuario, contexto Contexto, grupoID string) (*LoginResponse, error) {
+	var roleNoGrupo string
+	temVinculo := true
+
+	if contexto == ContextoGrupo {
+		var err error
+		temVinculo, err = s.repo.ValidateUsuarioGrupo(ctx, usuario.ID, grupoID)
+		if err != nil {
+			return nil, fmt.Errorf("auth.service.emitirNoContexto validar vinculo: %w", err)
+		}
+		roleNoGrupo = s.papelNoGrupo(ctx, usuario, grupoID)
+	}
+
+	role, err := RoleEfetiva(contexto, grupoID, usuario.Role, roleNoGrupo, temVinculo)
+	if err != nil {
+		return nil, err
+	}
+	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, role, contexto)
+}
+
+func (s *service) SelectGrupo(ctx context.Context, preAuthToken string, contexto Contexto, grupoID string) (*LoginResponse, error) {
 	claims, err := s.jwt.ValidatePreAuth(preAuthToken)
 	if err != nil {
 		return nil, apperror.Unauthorized("pre_auth_token inválido ou expirado")
-	}
-
-	pertence, err := s.repo.ValidateUsuarioGrupo(ctx, claims.UserID, grupoID)
-	if err != nil {
-		return nil, fmt.Errorf("auth.service.SelectGrupo validar grupo: %w", err)
-	}
-	if !pertence {
-		return nil, apperror.Forbidden("usuário não pertence a este grupo")
 	}
 
 	usuario, err := s.repo.GetUsuarioByID(ctx, claims.UserID)
@@ -91,24 +110,39 @@ func (s *service) SelectGrupo(ctx context.Context, preAuthToken, grupoID string)
 		return nil, fmt.Errorf("auth.service.SelectGrupo buscar usuário: %w", err)
 	}
 
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, s.papelNoGrupo(ctx, usuario, grupoID))
+	return s.emitirNoContexto(ctx, usuario, contexto, grupoID)
 }
 
-func (s *service) TrocaGrupo(ctx context.Context, userID, grupoID string) (*LoginResponse, error) {
-	pertence, err := s.repo.ValidateUsuarioGrupo(ctx, userID, grupoID)
-	if err != nil {
-		return nil, fmt.Errorf("auth.service.TrocaGrupo validar grupo: %w", err)
-	}
-	if !pertence {
-		return nil, apperror.Forbidden("usuário não pertence a este grupo")
-	}
-
+// TrocaGrupo troca o contexto ativo sem exigir novo login. O nome ficou do tempo
+// em que só se trocava de grupo; hoje Plataforma também é um destino.
+func (s *service) TrocaGrupo(ctx context.Context, userID string, contexto Contexto, grupoID string) (*LoginResponse, error) {
 	usuario, err := s.repo.GetUsuarioByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("auth.service.TrocaGrupo buscar usuário: %w", err)
 	}
+	return s.emitirNoContexto(ctx, usuario, contexto, grupoID)
+}
 
-	return s.issueTokens(ctx, usuario.ID, grupoID, usuario.Email, s.papelNoGrupo(ctx, usuario, grupoID))
+/*
+GetContextos lista para onde a pessoa pode ir.
+
+Plataforma só aparece para quem é admin_global. A tela poderia deduzir do papel,
+mas então a lista de destinos passaria a ser calculada em dois lugares — e o
+cliente é o mais fácil de alterar dos dois.
+*/
+func (s *service) GetContextos(ctx context.Context, userID string) (*ContextosResponse, error) {
+	usuario, err := s.repo.GetUsuarioByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("auth.service.GetContextos buscar usuário: %w", err)
+	}
+	grupos, err := s.repo.GetGruposByUsuarioID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("auth.service.GetContextos buscar grupos: %w", err)
+	}
+	return &ContextosResponse{
+		PodePlataforma: usuario.Role == RolePlataforma,
+		Grupos:         grupos,
+	}, nil
 }
 
 /*
@@ -138,8 +172,8 @@ func (s *service) papelNoGrupo(ctx context.Context, usuario *Usuario, grupoID st
 	return role
 }
 
-func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role string) (*LoginResponse, error) {
-	accessToken, err := s.jwt.Generate(userID, grupoID, email, role)
+func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role string, contexto Contexto) (*LoginResponse, error) {
+	accessToken, err := s.jwt.Generate(userID, grupoID, email, role, contexto)
 	if err != nil {
 		return nil, fmt.Errorf("auth.service.issueTokens gerar access token: %w", err)
 	}
@@ -152,7 +186,7 @@ func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role 
 	// O grupo ativo viaja com o refresh token: /auth/refresh recebe só o token
 	// opaco, sem as claims do access token expirado, e sem isso não teria como
 	// saber qual grupo o usuário multi-grupo havia selecionado.
-	if _, err := s.repo.InsertRefreshToken(ctx, userID, refreshToken, time.Now().Add(refreshTokenDuration), grupoID); err != nil {
+	if _, err := s.repo.InsertRefreshToken(ctx, userID, refreshToken, time.Now().Add(refreshTokenDuration), grupoID, contexto); err != nil {
 		return nil, fmt.Errorf("auth.service.issueTokens salvar refresh token: %w", err)
 	}
 
@@ -160,6 +194,8 @@ func (s *service) issueTokens(ctx context.Context, userID, grupoID, email, role 
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int(15 * time.Minute / time.Second),
+		Contexto:     contexto,
+		GrupoID:      grupoID,
 	}, nil
 }
 
@@ -198,35 +234,36 @@ func (s *service) Refresh(ctx context.Context, refreshToken string) (*LoginRespo
 		return nil, apperror.Unauthorized("usuário inativo")
 	}
 
-	// O grupo vem do refresh token, não de usuarios.grupo_id. Usar o valor do
-	// cadastro devolvia o usuário multi-grupo ao grupo padrão a cada renovação
-	// silenciosa — a ~15 min do login a tela trocava de grupo sozinha.
-	// Fallback para o cadastro cobre tokens emitidos antes da migration 000029.
+	/*
+	 * O contexto e o grupo vêm do refresh token, não de usuarios.grupo_id. Usar
+	 * o valor do cadastro devolvia o usuário multi-grupo ao grupo padrão a cada
+	 * renovação silenciosa — a ~15 min do login a tela trocava sozinha.
+	 *
+	 * Contexto vazio é token anterior à migration 000031, que os revogou todos;
+	 * se algum escapar, 'grupo' é a leitura conservadora — nunca promove
+	 * ninguém à plataforma por omissão.
+	 */
+	contexto := rt.Contexto
+	if contexto == "" {
+		contexto = ContextoGrupo
+	}
 	grupoIDForRefresh := rt.GrupoID
-	if grupoIDForRefresh == "" {
+	if contexto == ContextoGrupo && grupoIDForRefresh == "" {
 		grupoIDForRefresh = usuario.GrupoID
 	}
-	roleForRefresh := s.papelNoGrupo(ctx, usuario, grupoIDForRefresh)
-	accessToken, err := s.jwt.Generate(usuario.ID, grupoIDForRefresh, usuario.Email, roleForRefresh)
-	if err != nil {
-		return nil, fmt.Errorf("auth.service.Refresh gerar access token: %w", err)
-	}
 
-	newRefreshToken, err := generateOpaqueToken()
-	if err != nil {
-		return nil, fmt.Errorf("auth.service.Refresh gerar novo refresh token: %w", err)
-	}
-
-	// Propaga o grupo para o token rotacionado, senão a próxima renovação o perderia.
-	if _, err := s.repo.InsertRefreshToken(ctx, usuario.ID, newRefreshToken, time.Now().Add(refreshTokenDuration), grupoIDForRefresh); err != nil {
-		return nil, fmt.Errorf("auth.service.Refresh salvar novo refresh token: %w", err)
-	}
-
-	return &LoginResponse{
-		AccessToken:  accessToken,
-		RefreshToken: newRefreshToken,
-		ExpiresIn:    int(15 * time.Minute / time.Second),
-	}, nil
+	/*
+	 * A renovação revalida, em vez de reemitir o que estava.
+	 *
+	 * emitirNoContexto relê usuarios.role e o vínculo, e RoleEfetiva recusa o
+	 * que não for mais permitido. Sem isso, rebaixar alguém — ou tirá-lo de um
+	 * grupo — só surtia efeito quando o refresh token expirasse, até sete dias
+	 * depois: a renovação reemitia o papel antigo indefinidamente.
+	 *
+	 * Quem perdeu o acesso recebe 403 aqui e volta para o login, que é onde a
+	 * escolha de contexto acontece.
+	 */
+	return s.emitirNoContexto(ctx, usuario, contexto, grupoIDForRefresh)
 }
 
 func (s *service) Me(ctx context.Context, userID string) (*MeResponse, error) {

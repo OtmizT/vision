@@ -24,14 +24,17 @@ type mockService struct {
 func (m *mockService) Login(_ context.Context, _, _ string) (*LoginResponse, error) {
 	return m.loginResp, m.loginErr
 }
-func (m *mockService) SelectGrupo(_ context.Context, _, _ string) (*LoginResponse, error) {
+func (m *mockService) SelectGrupo(_ context.Context, _ string, _ Contexto, _ string) (*LoginResponse, error) {
 	return m.loginResp, m.loginErr
 }
-func (m *mockService) TrocaGrupo(_ context.Context, _, _ string) (*LoginResponse, error) {
+func (m *mockService) TrocaGrupo(_ context.Context, _ string, _ Contexto, _ string) (*LoginResponse, error) {
 	return m.loginResp, m.loginErr
 }
 func (m *mockService) GetGrupos(_ context.Context, _ string) ([]GrupoInfo, error) {
 	return nil, nil
+}
+func (m *mockService) GetContextos(_ context.Context, _ string) (*ContextosResponse, error) {
+	return &ContextosResponse{}, nil
 }
 func (m *mockService) Logout(_ context.Context, _ string) error { return m.logoutErr }
 func (m *mockService) Refresh(_ context.Context, _ string) (*LoginResponse, error) {
@@ -132,7 +135,7 @@ func TestHandler_Me_WithValidToken(t *testing.T) {
 
 	// Gera token válido
 	jwtSvc := NewJWTService(testSecret)
-	token, _ := jwtSvc.Generate("u1", "g1", "t@t.com", "viewer")
+	token, _ := jwtSvc.Generate("u1", "g1", "t@t.com", "viewer", ContextoGrupo)
 
 	req := httptest.NewRequest(http.MethodGet, "/me", nil)
 	req.Header.Set("Authorization", "Bearer "+token)

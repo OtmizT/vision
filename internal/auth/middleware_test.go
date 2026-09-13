@@ -131,7 +131,7 @@ func TestRequireGrupoMembro(t *testing.T) {
 // quem é; o RequireAuth preenche o Ator que ele deixou no contexto.
 func TestRequireAuth_RegistraAtorParaAuditoria(t *testing.T) {
 	jwtSvc := NewJWTService("segredo-de-teste-com-mais-de-32-caracteres")
-	token, err := jwtSvc.Generate("u-9", grupoA, "ana@alpha.com", "admin_grupo")
+	token, err := jwtSvc.Generate("u-9", grupoA, "ana@alpha.com", "admin_grupo", ContextoGrupo)
 	if err != nil {
 		t.Fatalf("gerar token: %v", err)
 	}
@@ -169,7 +169,7 @@ func TestRequireAuth_TokenInvalidoNaoRegistraAtor(t *testing.T) {
 // entrar em pânico por causa disso.
 func TestRequireAuth_SemAtorNoContexto(t *testing.T) {
 	jwtSvc := NewJWTService("segredo-de-teste-com-mais-de-32-caracteres")
-	token, _ := jwtSvc.Generate("u-1", grupoA, "v@x.c", "viewer")
+	token, _ := jwtSvc.Generate("u-1", grupoA, "v@x.c", "viewer", ContextoGrupo)
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 

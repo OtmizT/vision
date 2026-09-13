@@ -102,6 +102,7 @@ type EtlRefreshToken struct {
 	Revoked   bool               `json:"revoked"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	GrupoID   pgtype.UUID        `json:"grupo_id"`
+	Contexto  string             `json:"contexto"`
 }
 
 type EtlSchemaVersion struct {

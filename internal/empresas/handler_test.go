@@ -47,7 +47,7 @@ func newTestHandler(svc Service) *Handler {
 func bearerToken(t *testing.T, role string) string {
 	t.Helper()
 	jwtSvc := auth.NewJWTService(testJWTSecret)
-	tok, _ := jwtSvc.Generate("u1", "g1", "u@t.com", role)
+	tok, _ := jwtSvc.Generate("u1", "g1", "u@t.com", role, auth.ContextoGrupo)
 	return "Bearer " + tok
 }
 

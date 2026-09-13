@@ -16,7 +16,7 @@ import (
 type Repository interface {
 	GetUsuarioByEmail(ctx context.Context, email string) (*Usuario, error)
 	GetUsuarioByID(ctx context.Context, id string) (*Usuario, error)
-	InsertRefreshToken(ctx context.Context, usuarioID, token string, expiresAt time.Time, grupoID string) (*RefreshToken, error)
+	InsertRefreshToken(ctx context.Context, usuarioID, token string, expiresAt time.Time, grupoID string, contexto Contexto) (*RefreshToken, error)
 	GetRefreshToken(ctx context.Context, token string) (*RefreshToken, error)
 	RevokeRefreshToken(ctx context.Context, token string) error
 	RevokeAllUserTokens(ctx context.Context, usuarioID string) error
@@ -55,9 +55,9 @@ func (r *repository) GetUsuarioByID(ctx context.Context, id string) (*Usuario, e
 	return rowToUsuario(row.ID, row.GrupoID, row.Nome, row.Email, row.Password, row.Role, row.Ativo, row.CreatedAt, row.UpdatedAt), nil
 }
 
-// InsertRefreshToken grava o refresh token junto com o grupo ativo na sessão.
-// grupoID vazio é permitido (admin_global sem grupo próprio) e vira NULL.
-func (r *repository) InsertRefreshToken(ctx context.Context, usuarioID, token string, expiresAt time.Time, grupoID string) (*RefreshToken, error) {
+// InsertRefreshToken grava o refresh token junto com o grupo ativo e o contexto
+// da sessão. grupoID vazio é permitido (contexto de plataforma) e vira NULL.
+func (r *repository) InsertRefreshToken(ctx context.Context, usuarioID, token string, expiresAt time.Time, grupoID string, contexto Contexto) (*RefreshToken, error) {
 	q := sqlcgen.New(r.pool)
 	var uid pgtype.UUID
 	if err := uid.Scan(usuarioID); err != nil {
@@ -78,6 +78,7 @@ func (r *repository) InsertRefreshToken(ctx context.Context, usuarioID, token st
 		Token:     token,
 		ExpiresAt: exp,
 		GrupoID:   gid,
+		Contexto:  string(contexto),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("auth.repository.InsertRefreshToken: %w", err)
@@ -90,6 +91,7 @@ func (r *repository) InsertRefreshToken(ctx context.Context, usuarioID, token st
 		Revoked:   row.Revoked,
 		CreatedAt: row.CreatedAt.Time,
 		GrupoID:   uuidToStr(row.GrupoID),
+		Contexto:  Contexto(row.Contexto),
 	}, nil
 }
 
@@ -107,6 +109,7 @@ func (r *repository) GetRefreshToken(ctx context.Context, token string) (*Refres
 		Revoked:   row.Revoked,
 		CreatedAt: row.CreatedAt.Time,
 		GrupoID:   uuidToStr(row.GrupoID),
+		Contexto:  Contexto(row.Contexto),
 	}, nil
 }
 

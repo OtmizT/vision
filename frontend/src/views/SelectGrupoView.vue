@@ -9,16 +9,34 @@
         <div class="logo-text">Visi<span>ON</span></div>
       </div>
 
-      <h2 class="title">Selecionar Grupo</h2>
-      <p class="subtitle">{{ isTroca ? 'Escolha o grupo para continuar' : 'Você pertence a múltiplos grupos. Escolha um para continuar.' }}</p>
+      <h2 class="title">{{ podePlataforma ? 'Selecionar Contexto' : 'Selecionar Grupo' }}</h2>
+      <p class="subtitle">{{ subtitulo }}</p>
 
-      <div v-if="loading" class="loading">Carregando grupos...</div>
+      <div v-if="loading" class="loading">Carregando...</div>
 
-      <div v-else-if="grupos.length === 0" class="empty">
+      <div v-else-if="!podePlataforma && grupos.length === 0" class="empty">
         Nenhum grupo disponível.
       </div>
 
       <div v-else class="grupos-list">
+        <!-- Plataforma primeiro: e o lugar onde o admin global trabalha. Sem
+             esta opcao ele entraria num grupo e o painel dele ficaria sem
+             caminho de volta que nao fosse deslogar. -->
+        <button
+          v-if="podePlataforma"
+          class="grupo-btn plataforma-btn"
+          :class="{ selected: selectedId === PLATAFORMA, loading: selecting === PLATAFORMA }"
+          :disabled="!!selecting"
+          @click="entrarNaPlataforma"
+        >
+          <div class="grupo-icon plataforma-icon">P</div>
+          <div class="grupo-info">
+            <div class="grupo-nome">Plataforma</div>
+            <div class="grupo-slug">administracao de todos os grupos</div>
+          </div>
+          <div v-if="selecting === PLATAFORMA" class="spinner" />
+        </button>
+
         <button
           v-for="g in grupos"
           :key="g.id"
@@ -56,50 +74,69 @@ const route    = useRoute()
 // isTroca = usuário já autenticado quer trocar de grupo
 const isTroca  = computed(() => !!auth.accessToken)
 
+// Valor sentinela para o botao da Plataforma, que nao tem id de grupo.
+const PLATAFORMA = '__plataforma__'
+
 const grupos   = ref<GrupoInfo[]>([])
 const loading  = ref(false)
 const selecting = ref('')
 const selectedId = ref('')
 const error    = ref('')
+const podePlataforma = ref(auth.podePlataforma)
+
+const subtitulo = computed(() => {
+  if (podePlataforma.value) return 'Escolha onde entrar: administrar a plataforma ou trabalhar em um grupo.'
+  return isTroca.value ? 'Escolha o grupo para continuar' : 'Você pertence a múltiplos grupos. Escolha um para continuar.'
+})
 
 onMounted(async () => {
   if (isTroca.value) {
-    // Busca grupos do usuário autenticado
+    // Autenticado trocando de contexto: o servidor diz quais sao os destinos.
     loading.value = true
     try {
-      grupos.value = await auth.fetchGrupos()
+      const ctxs = await auth.fetchContextos()
+      grupos.value = ctxs.grupos
+      podePlataforma.value = ctxs.pode_plataforma
     } catch {
-      error.value = 'Erro ao carregar grupos.'
+      error.value = 'Erro ao carregar contextos.'
     } finally {
       loading.value = false
     }
   } else {
-    // Usa grupos salvos do flow de login
+    // Fluxo de login: usa o que veio na resposta do /auth/login.
     grupos.value = auth.pendingGrupos
-    if (grupos.value.length === 0) {
+    podePlataforma.value = auth.podePlataforma
+    if (grupos.value.length === 0 && !podePlataforma.value) {
       // Sem estado pendente — redireciona para login
       router.replace('/login')
     }
   }
 })
 
+async function entrarNaPlataforma() {
+  await entrar(PLATAFORMA, () =>
+    isTroca.value ? auth.trocaContexto('plataforma') : auth.selectContexto('plataforma'))
+}
+
 async function handleSelect(grupoID: string) {
+  await entrar(grupoID, () =>
+    isTroca.value ? auth.trocaGrupo(grupoID) : auth.selectGrupo(grupoID))
+}
+
+async function entrar(marca: string, acao: () => Promise<void>) {
   if (selecting.value) return
-  selecting.value = grupoID
-  selectedId.value = grupoID
+  selecting.value = marca
+  selectedId.value = marca
   error.value = ''
 
   try {
-    if (isTroca.value) {
-      await auth.trocaGrupo(grupoID)
-    } else {
-      await auth.selectGrupo(grupoID)
-    }
-    // destinoAposEntrar recusa redirect externo e cai na tela do papel quando
-    // nao ha redirect — '/' mandaria o admin global para um 403.
-    router.push(destinoAposEntrar(auth.user?.role, route.query.redirect as string))
-  } catch (e: unknown) {
-    error.value = 'Erro ao selecionar grupo. Tente novamente.'
+    await acao()
+    // destinoAposEntrar recusa redirect externo e cai na tela do contexto
+    // quando nao ha redirect — '/' mandaria quem entrou na plataforma para um
+    // 403, e ROTA_PLATAFORMA faria o mesmo com quem entrou num grupo.
+    router.push(destinoAposEntrar(auth.contexto, route.query.redirect as string))
+  } catch {
+    error.value = 'Erro ao entrar. Tente novamente.'
     selectedId.value = ''
   } finally {
     selecting.value = ''
@@ -221,6 +258,11 @@ function cancelar() {
   opacity: 0.6;
   cursor: default;
 }
+
+/* A plataforma se destaca de proposito: e o contexto em que uma acao alcanca
+   todos os clientes de uma vez. */
+.plataforma-btn { border-color: var(--primary-line); }
+.plataforma-icon { background: linear-gradient(135deg, var(--primary), var(--primary-line)); }
 
 .grupo-icon {
   width: 36px; height: 36px; border-radius: 8px;
