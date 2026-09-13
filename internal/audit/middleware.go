@@ -87,6 +87,11 @@ func Middleware(repo Repository, log zerolog.Logger) func(http.Handler) http.Han
 				reqBody = SanitizeBody(string(raw))
 			}
 
+			// O Ator entra vazio e é preenchido pelo RequireAuth quando o
+			// token é validado, já dentro do next. Ver audit/ator.go.
+			ctx, ator := ComAtor(r.Context())
+			r = r.WithContext(ctx)
+
 			rr := &responseRecorder{ResponseWriter: w, status: http.StatusOK}
 			next.ServeHTTP(rr, r)
 
@@ -104,7 +109,10 @@ func Middleware(repo Repository, log zerolog.Logger) func(http.Handler) http.Han
 				RequestID:    requestID,
 				Method:       r.Method,
 				Path:         r.URL.Path,
-				QueryParams:  r.URL.RawQuery,
+				UserID:       ator.UserID,
+				UserEmail:    ator.Email,
+				Role:         ator.Role,
+				QueryParams:  SanitizeQuery(r.URL.RawQuery),
 				StatusCode:   rr.status,
 				RequestBody:  reqBody,
 				ResponseBody: respBody,

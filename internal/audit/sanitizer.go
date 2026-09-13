@@ -2,6 +2,7 @@ package audit
 
 import (
 	"encoding/json"
+	"net/url"
 	"strings"
 )
 
@@ -67,4 +68,36 @@ func isSensitive(key string) bool {
 		}
 	}
 	return false
+}
+
+/*
+SanitizeQuery redige os valores sensíveis da query string.
+
+As rotas SSE aceitam ?token=<JWT> porque o EventSource do navegador não manda
+header Authorization. Guardar a query string crua colocava tokens de acesso
+inteiros dentro de audit_logs — uma tabela que existe justamente para ser lida
+depois, por gente que não precisa de credencial de ninguém.
+
+A chave é preservada e só o valor some: saber que a requisição levava um token
+faz parte da trilha.
+*/
+func SanitizeQuery(raw string) string {
+	if raw == "" {
+		return raw
+	}
+	vals, err := url.ParseQuery(raw)
+	if err != nil {
+		// Query string malformada: não dá para separar chave de valor com
+		// segurança, então não se grava nada em vez de gravar o token inteiro.
+		return "[omitido: query inválida]"
+	}
+	for k, vs := range vals {
+		if !isSensitive(k) {
+			continue
+		}
+		for i := range vs {
+			vs[i] = "***REDACTED***"
+		}
+	}
+	return vals.Encode()
 }

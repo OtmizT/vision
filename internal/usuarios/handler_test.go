@@ -42,7 +42,7 @@ func (m *mockSvc) UpdatePassword(_ context.Context, _ string, _ UpdatePasswordRe
 func (m *mockSvc) Delete(_ context.Context, _ string) error { return m.err }
 
 func newTestHandler(svc Service) *Handler {
-	return NewHandler(svc, auth.NewJWTService(testJWTSecret))
+	return NewHandler(svc, auth.NewJWTService(testJWTSecret), nil)
 }
 
 func token(t *testing.T, role string) string {

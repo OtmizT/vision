@@ -15,16 +15,23 @@ import (
 type Handler struct {
 	svc    Service
 	jwtSvc auth.JWTService
+	// membros verifica o vínculo usuário×grupo a cada request. Pode ser nil em
+	// testes — ver auth.RequireGrupoMembro.
+	membros auth.MembroChecker
 }
 
-func NewHandler(svc Service, jwtSvc auth.JWTService) *Handler {
-	return &Handler{svc: svc, jwtSvc: jwtSvc}
+func NewHandler(svc Service, jwtSvc auth.JWTService, membros auth.MembroChecker) *Handler {
+	return &Handler{svc: svc, jwtSvc: jwtSvc, membros: membros}
 }
 
 func (h *Handler) Routes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(auth.RequireAuth(h.jwtSvc))
 	r.Use(auth.RequireRole("admin_global", "admin_grupo"))
+	// Faltava aqui: a rota é /admin/grupos/{grupoID}/usuarios e só verificava o
+	// papel. Um admin do cliente A trocava o UUID da URL e listava, criava,
+	// editava e apagava usuários do cliente B.
+	r.Use(auth.RequireGrupoMembro(h.membros))
 
 	r.Get("/", h.List)
 	r.Post("/", h.Create)

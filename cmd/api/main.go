@@ -95,10 +95,10 @@ func main() {
 
 	// --- Handlers ---
 	authHandler := auth.NewHandler(authSvc, jwtSvc)
-	gruposHandler := grupos.NewHandler(gruposSvc, jwtSvc)
-	empresasHandler := empresas.NewHandler(empresasSvc, jwtSvc)
+	gruposHandler := grupos.NewHandler(gruposSvc, jwtSvc, authRepo)
+	empresasHandler := empresas.NewHandler(empresasSvc, jwtSvc, authRepo)
 	syncHandler := syncsvc.NewHandler(syncSvc, jwtSvc, sseHub)
-	usuariosHandler := usuarios.NewHandler(usuariosSvc, jwtSvc)
+	usuariosHandler := usuarios.NewHandler(usuariosSvc, jwtSvc, authRepo)
 	permissoesHandler := permissoes.NewHandler(permissoesSvc, jwtSvc)
 	dadosHandler := dados.NewHandler(pool, jwtSvc)
 	omieConfigHandler := omie_config.NewHandler(omieConfigSvc, jwtSvc)
@@ -151,6 +151,7 @@ func main() {
 		DadosHandler:      dadosHandler,
 		OmieConfigHandler: omieConfigHandler,
 		QueryHandler:      queryHandler,
+		Membros:           authRepo,
 		Logger:            log,
 	})
 

@@ -34,7 +34,9 @@ type Dependencies struct {
 	DadosHandler      *dados.Handler
 	OmieConfigHandler *omie_config.Handler
 	QueryHandler      *query.Handler
-	Logger            zerolog.Logger
+	// Membros verifica vínculo usuário×grupo nas rotas com {grupoID}.
+	Membros auth.MembroChecker
+	Logger  zerolog.Logger
 }
 
 // corsMiddleware libera o frontend local em development e o domínio configurado em production.
@@ -134,7 +136,11 @@ func NewRouter(deps Dependencies) http.Handler {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireAuth(deps.AuthHandler.JWTService()))
 		r.Use(auth.RequireRole("admin_global", "admin_grupo"))
-		r.With(sqlRateLimiter.Handler).Post("/admin/grupos/{grupoID}/query", deps.QueryHandler.Execute)
+		// Sem o RequireGrupoMembro, um admin do cliente A trocava o UUID da URL
+		// e rodava SELECT no schema do cliente B. O middleware inline enxerga o
+		// {grupoID} porque a rota já casou quando ele roda.
+		r.With(sqlRateLimiter.Handler, auth.RequireGrupoMembro(deps.Membros)).
+			Post("/admin/grupos/{grupoID}/query", deps.QueryHandler.Execute)
 	})
 
 	// Dados sincronizados (leitura dos schemas tenant)

@@ -42,7 +42,7 @@ func (m *mockService) Delete(_ context.Context, _ string) error {
 }
 
 func newTestHandler(svc Service) *Handler {
-	return NewHandler(svc, auth.NewJWTService(testJWTSecret))
+	return NewHandler(svc, auth.NewJWTService(testJWTSecret), nil)
 }
 
 func bearerToken(t *testing.T, role string) string {

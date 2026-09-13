@@ -15,10 +15,13 @@ import (
 type Handler struct {
 	svc    Service
 	jwtSvc auth.JWTService
+	// membros verifica o vínculo usuário×grupo a cada request. Pode ser nil em
+	// testes — ver auth.RequireGrupoMembro.
+	membros auth.MembroChecker
 }
 
-func NewHandler(svc Service, jwtSvc auth.JWTService) *Handler {
-	return &Handler{svc: svc, jwtSvc: jwtSvc}
+func NewHandler(svc Service, jwtSvc auth.JWTService, membros auth.MembroChecker) *Handler {
+	return &Handler{svc: svc, jwtSvc: jwtSvc, membros: membros}
 }
 
 func (h *Handler) Routes() http.Handler {
@@ -26,11 +29,14 @@ func (h *Handler) Routes() http.Handler {
 	r.Use(auth.RequireAuth(h.jwtSvc))
 
 	r.Get("/", h.List)
-	r.Post("/", h.Create)
+
+	// Criar grupo é ato de plataforma. Estava fora de qualquer bloco de papel:
+	// qualquer autenticado — viewer inclusive — provisionava um schema novo.
+	r.With(auth.RequireRole("admin_global")).Post("/", h.Create)
 
 	r.Group(func(r chi.Router) {
 		r.Use(auth.RequireRole("admin_global", "admin_grupo"))
-		r.Use(auth.RequireGrupoMembro)
+		r.Use(auth.RequireGrupoMembro(h.membros))
 		r.Get("/{grupoID}", h.GetByID)
 		r.Put("/{grupoID}", h.Update)
 		r.Delete("/{grupoID}", h.Delete)

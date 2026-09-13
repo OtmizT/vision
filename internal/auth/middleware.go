@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
+
+	"omie-sync-api/internal/audit"
 	"omie-sync-api/internal/response"
 )
 
@@ -29,6 +31,10 @@ func RequireAuth(jwtSvc JWTService) func(http.Handler) http.Handler {
 				response.Unauthorized(w, "token inválido ou expirado")
 				return
 			}
+
+			// Registra quem é, para a auditoria. O middleware de auditoria roda
+			// antes deste e não tem como saber — ver audit/ator.go.
+			audit.AtorFromContext(r.Context()).Registrar(claims.UserID, claims.Email, claims.Role)
 
 			ctx := context.WithValue(r.Context(), CtxKeyUserClaims, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -56,6 +62,10 @@ func RequireAuthSSE(jwtSvc JWTService) func(http.Handler) http.Handler {
 				response.Unauthorized(w, "token inválido ou expirado")
 				return
 			}
+
+			// Registra quem é, para a auditoria. O middleware de auditoria roda
+			// antes deste e não tem como saber — ver audit/ator.go.
+			audit.AtorFromContext(r.Context()).Registrar(claims.UserID, claims.Email, claims.Role)
 
 			ctx := context.WithValue(r.Context(), CtxKeyUserClaims, claims)
 			next.ServeHTTP(w, r.WithContext(ctx))
@@ -86,36 +96,80 @@ func RequireRole(roles ...string) func(http.Handler) http.Handler {
 	}
 }
 
-// RequireGrupoMembro garante que o usuário pertence ao grupo da rota.
-// Extrai grupo_id do path param "grupoID".
-func RequireGrupoMembro(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		claims, ok := ClaimsFromContext(r.Context())
-		if !ok {
-			response.Unauthorized(w, "não autenticado")
-			return
-		}
+// MembroChecker responde se um usuário pertence a um grupo.
+// internal/auth.Repository já satisfaz a interface.
+type MembroChecker interface {
+	ValidateUsuarioGrupo(ctx context.Context, usuarioID, grupoID string) (bool, error)
+}
 
-		// admin_global tem acesso irrestrito
-		if claims.Role == "admin_global" {
+/*
+RequireGrupoMembro garante que o usuário pertence ao grupo da rota, extraído do
+path param "grupoID".
+
+A versão anterior comparava apenas claims.GrupoID com o grupo da URL, sem nunca
+consultar usuario_grupos — o nome prometia uma verificação que não existia. A
+diferença prática é a revogação: tirar alguém de um grupo não tinha efeito
+nenhum até o token expirar, porque o grupo viajava dentro do próprio token.
+
+As duas condições valem juntas, e cada uma cobre uma coisa:
+
+  - o grupo do token precisa bater com o da URL — é o contexto ativo da sessão,
+    e quem está em dois grupos não opera no B enquanto entrou no A;
+  - o vínculo precisa existir no banco agora, não no momento em que o token foi
+    emitido.
+
+admin_global passa direto: é privilégio de plataforma, e o próprio token não
+carrega grupo.
+
+`membros` nil mantém só a comparação do token — é o comportamento antigo, para
+montagens de teste que não têm banco. Nunca afrouxa em relação ao que havia.
+*/
+func RequireGrupoMembro(membros MembroChecker) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := ClaimsFromContext(r.Context())
+			if !ok {
+				response.Unauthorized(w, "não autenticado")
+				return
+			}
+
+			if claims.Role == "admin_global" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			grupoID := chi.URLParam(r, "grupoID")
+			if grupoID == "" {
+				// Rota sem grupo no path — nada a verificar aqui.
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			if claims.GrupoID != grupoID {
+				response.Forbidden(w, "acesso negado a este grupo")
+				return
+			}
+
+			if membros == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			pertence, err := membros.ValidateUsuarioGrupo(r.Context(), claims.UserID, grupoID)
+			if err != nil {
+				// Falha ao consultar fecha a porta: liberar em caso de erro
+				// transformaria uma indisponibilidade do banco em acesso livre.
+				response.Error(w, http.StatusInternalServerError, "erro ao verificar vínculo com o grupo", err)
+				return
+			}
+			if !pertence {
+				response.Forbidden(w, "acesso negado a este grupo")
+				return
+			}
+
 			next.ServeHTTP(w, r)
-			return
-		}
-
-		grupoID := chi.URLParam(r, "grupoID")
-		if grupoID == "" {
-			// sem restrição de grupo no path
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		if claims.GrupoID != grupoID {
-			response.Forbidden(w, "acesso negado a este grupo")
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
+		})
+	}
 }
 
 // ClaimsFromContext extrai as claims do contexto.

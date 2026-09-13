@@ -2,6 +2,7 @@ package audit
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -116,4 +117,44 @@ func contains(s, sub string) bool {
 			}
 			return false
 		}())
+}
+
+func TestSanitizeQuery(t *testing.T) {
+	casos := []struct {
+		nome      string
+		raw       string
+		contem    []string
+		naoContem []string
+	}{
+		{"vazia", "", nil, nil},
+		{"sem nada sensível", "page=2&per_page=50", []string{"page=2", "per_page=50"}, nil},
+		{"token do SSE some, a chave fica", "token=abc.def.ghi", []string{"token=", "REDACTED"}, []string{"abc.def.ghi"}},
+		{"redige só o valor sensível", "aba=jobs&access_token=xyz", []string{"aba=jobs"}, []string{"xyz"}},
+		{"chave repetida some inteira", "token=um&token=dois", []string{"REDACTED"}, []string{"um", "dois"}},
+	}
+
+	for _, c := range casos {
+		t.Run(c.nome, func(t *testing.T) {
+			got := SanitizeQuery(c.raw)
+			for _, s := range c.contem {
+				if !strings.Contains(got, s) {
+					t.Errorf("esperava %q em %q", s, got)
+				}
+			}
+			for _, s := range c.naoContem {
+				if strings.Contains(got, s) {
+					t.Errorf("não esperava %q em %q", s, got)
+				}
+			}
+		})
+	}
+}
+
+// Query malformada não dá para separar com segurança: some inteira, em vez de
+// ir para o banco com um token dentro.
+func TestSanitizeQuery_MalformadaNaoVazaNada(t *testing.T) {
+	got := SanitizeQuery("token=%ZZ")
+	if strings.Contains(got, "%ZZ") || strings.Contains(got, "token=%") {
+		t.Fatalf("got %q", got)
+	}
 }

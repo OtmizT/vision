@@ -41,7 +41,7 @@ func (m *mockSvc) Delete(_ context.Context, _ string) error   { return m.deleteE
 func (m *mockSvc) Reativar(_ context.Context, _ string) error { return m.reativarErr }
 
 func newTestHandler(svc Service) *Handler {
-	return NewHandler(svc, auth.NewJWTService(testJWTSecret))
+	return NewHandler(svc, auth.NewJWTService(testJWTSecret), nil)
 }
 
 func bearerToken(t *testing.T, role string) string {

@@ -46,10 +46,10 @@ func buildRouter(t *testing.T) http.Handler {
 	return NewRouter(Dependencies{
 		AuditRepo:         auditRepo,
 		AuthHandler:       auth.NewHandler(authSvc, jwtSvc),
-		GruposHandler:     grupos.NewHandler(gruposSvc, jwtSvc),
-		EmpresasHandler:   empresas.NewHandler(empresasSvc, jwtSvc),
+		GruposHandler:     grupos.NewHandler(gruposSvc, jwtSvc, nil),
+		EmpresasHandler:   empresas.NewHandler(empresasSvc, jwtSvc, nil),
 		SyncHandler:       syncsvc.NewHandler(syncSvc, jwtSvc, syncsvc.NewSSEHub()),
-		UsuariosHandler:   usuarios.NewHandler(usuariosSvc, jwtSvc),
+		UsuariosHandler:   usuarios.NewHandler(usuariosSvc, jwtSvc, nil),
 		PermissoesHandler: permissoes.NewHandler(permissoesSvc, jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omieConfigSvc, jwtSvc),
@@ -104,10 +104,10 @@ func TestIntegration_AuditMiddlewareRunsOnAllRoutes(t *testing.T) {
 	router := NewRouter(Dependencies{
 		AuditRepo:         logged,
 		AuthHandler:       auth.NewHandler(&nullAuthSvc{}, jwtSvc),
-		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc),
-		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc),
+		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc, nil),
+		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc, nil),
 		SyncHandler:       syncsvc.NewHandler(syncsvc.NewService(&nullSyncRepo{}, &nullDispatcher{}, zerolog.Nop()), jwtSvc, syncsvc.NewSSEHub()),
-		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc),
+		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc, nil),
 		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
 		DadosHandler:      dados.NewHandler(nil, jwtSvc),
 		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
@@ -399,3 +399,170 @@ func (n *nullSyncRepo) ConsultasAtivas(context.Context) ([]syncsvc.ConsultaAtiva
 func (n *nullSyncRepo) CancelarConsulta(context.Context, int32) (bool, error)     { return false, nil }
 func (n *nullSyncRepo) SchemaDoGrupo(context.Context, string) (string, error)     { return "", nil }
 func (n *nullSyncRepo) RefreshView(context.Context, string, string) (bool, error) { return false, nil }
+
+/*
+Fase A — as portas dos fundos que estavam abertas em produção.
+
+Os três casos abaixo passavam antes: o primeiro criava um grupo, os outros dois
+liam e escreviam no cliente errado. São testes de roteamento — checam que o
+middleware está montado, não a regra dele, que vive em auth/middleware_test.go.
+*/
+func TestIntegration_IsolamentoEntreClientes(t *testing.T) {
+	router := buildRouter(t)
+	jwtSvc := auth.NewJWTService(testSecret)
+
+	const grupoA = "11111111-1111-1111-1111-111111111111"
+	const grupoB = "22222222-2222-2222-2222-222222222222"
+
+	viewer, _ := jwtSvc.Generate("u-v", grupoA, "v@a.com", "viewer")
+	adminA, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo")
+
+	casos := []struct {
+		nome         string
+		method, path string
+		token        string
+		esperado     int
+	}{
+		// Criar grupo estava fora de qualquer bloco de papel.
+		{"viewer não cria grupo", http.MethodPost, "/admin/grupos", viewer, http.StatusForbidden},
+		{"admin de grupo não cria grupo", http.MethodPost, "/admin/grupos", adminA, http.StatusForbidden},
+
+		// A rota de usuários só verificava papel, nunca o grupo da URL.
+		{"usuários de outro cliente", http.MethodGet, "/admin/grupos/" + grupoB + "/usuarios", adminA, http.StatusForbidden},
+		{"empresas de outro cliente", http.MethodGet, "/admin/grupos/" + grupoB + "/empresas", adminA, http.StatusForbidden},
+		{"SQL Explorer em outro cliente", http.MethodPost, "/admin/grupos/" + grupoB + "/query", adminA, http.StatusForbidden},
+	}
+
+	for _, c := range casos {
+		t.Run(c.nome, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(c.method, c.path, nil)
+			req.Header.Set("Authorization", "Bearer "+c.token)
+			router.ServeHTTP(rr, req)
+			if rr.Code != c.esperado {
+				t.Fatalf("got %d, want %d", rr.Code, c.esperado)
+			}
+		})
+	}
+}
+
+// O fechamento não pode ter trancado quem é de casa.
+func TestIntegration_AcessoLegitimoContinuaPassando(t *testing.T) {
+	router := buildRouter(t)
+	jwtSvc := auth.NewJWTService(testSecret)
+
+	const grupoA = "11111111-1111-1111-1111-111111111111"
+	adminA, _ := jwtSvc.Generate("u-a", grupoA, "a@a.com", "admin_grupo")
+	global, _ := jwtSvc.Generate("u-g", "", "g@p.com", "admin_global")
+
+	casos := []struct {
+		nome         string
+		method, path string
+		token        string
+	}{
+		{"admin do grupo lista os próprios usuários", http.MethodGet, "/admin/grupos/" + grupoA + "/usuarios", adminA},
+		{"admin do grupo lista as próprias empresas", http.MethodGet, "/admin/grupos/" + grupoA + "/empresas", adminA},
+		{"admin global cria grupo", http.MethodPost, "/admin/grupos", global},
+		{"admin global entra em qualquer grupo", http.MethodGet, "/admin/grupos/" + grupoA + "/usuarios", global},
+	}
+
+	for _, c := range casos {
+		t.Run(c.nome, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			req := httptest.NewRequest(c.method, c.path, nil)
+			req.Header.Set("Authorization", "Bearer "+c.token)
+			router.ServeHTTP(rr, req)
+			if rr.Code == http.StatusForbidden || rr.Code == http.StatusUnauthorized || rr.Code == http.StatusNotFound {
+				t.Fatalf("acesso legítimo barrado: got %d", rr.Code)
+			}
+		})
+	}
+}
+
+// capturaEntradas guarda as LogEntry inteiras, e não só a contagem.
+type capturaEntradas struct {
+	ch chan audit.LogEntry
+}
+
+func (c *capturaEntradas) Insert(_ context.Context, e audit.LogEntry) error {
+	c.ch <- e
+	return nil
+}
+
+/*
+O autor chegando ao log através do router de verdade.
+
+Os testes de unidade cobrem as duas metades separadas — o middleware de
+auditoria deixando o Ator no contexto, e o RequireAuth preenchendo. Só que o
+defeito original era exatamente a junção: a autenticação roda dentro de cada
+subrouter montado, depois da auditoria, e a escrita precisa atravessar o
+r.WithContext de volta. Isso só a cadeia inteira mostra.
+*/
+func TestIntegration_AuditoriaRegistraQuemFez(t *testing.T) {
+	cap := &capturaEntradas{ch: make(chan audit.LogEntry, 8)}
+	jwtSvc := auth.NewJWTService(testSecret)
+
+	router := NewRouter(Dependencies{
+		AuditRepo:         cap,
+		AuthHandler:       auth.NewHandler(&nullAuthSvc{}, jwtSvc),
+		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc, nil),
+		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc, nil),
+		SyncHandler:       syncsvc.NewHandler(syncsvc.NewService(&nullSyncRepo{}, &nullDispatcher{}, zerolog.Nop()), jwtSvc, syncsvc.NewSSEHub()),
+		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc, nil),
+		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
+		DadosHandler:      dados.NewHandler(nil, jwtSvc),
+		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
+		Logger:            zerolog.Nop(),
+	})
+
+	tok, _ := jwtSvc.Generate("u-77", "g-1", "ana@alpha.com", "admin_global")
+	req := httptest.NewRequest(http.MethodGet, "/admin/grupos", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	router.ServeHTTP(httptest.NewRecorder(), req)
+
+	select {
+	case e := <-cap.ch:
+		if e.UserID != "u-77" || e.UserEmail != "ana@alpha.com" || e.Role != "admin_global" {
+			t.Fatalf("trilha sem autor: %+v", e)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("nenhuma entrada de auditoria gravada")
+	}
+}
+
+// Uma requisição barrada é justamente a que precisa de autor na trilha.
+func TestIntegration_AuditoriaRegistraAutorDeAcessoNegado(t *testing.T) {
+	cap := &capturaEntradas{ch: make(chan audit.LogEntry, 8)}
+	jwtSvc := auth.NewJWTService(testSecret)
+
+	router := NewRouter(Dependencies{
+		AuditRepo:         cap,
+		AuthHandler:       auth.NewHandler(&nullAuthSvc{}, jwtSvc),
+		GruposHandler:     grupos.NewHandler(grupos.NewService(&nullGruposRepo{}, nil), jwtSvc, nil),
+		EmpresasHandler:   empresas.NewHandler(empresas.NewService(&nullEmpresasRepo{}), jwtSvc, nil),
+		SyncHandler:       syncsvc.NewHandler(syncsvc.NewService(&nullSyncRepo{}, &nullDispatcher{}, zerolog.Nop()), jwtSvc, syncsvc.NewSSEHub()),
+		UsuariosHandler:   usuarios.NewHandler(usuarios.NewService(&nullUsuariosRepo{}), jwtSvc, nil),
+		PermissoesHandler: permissoes.NewHandler(permissoes.NewService(&nullPermissoesRepo{}), jwtSvc),
+		DadosHandler:      dados.NewHandler(nil, jwtSvc),
+		OmieConfigHandler: omie_config.NewHandler(omie_config.NewService(&nullOmieConfigRepo{}), jwtSvc),
+		Logger:            zerolog.Nop(),
+	})
+
+	tok, _ := jwtSvc.Generate("u-88", "11111111-1111-1111-1111-111111111111", "mal@a.com", "admin_grupo")
+	req := httptest.NewRequest(http.MethodGet, "/admin/grupos/22222222-2222-2222-2222-222222222222/usuarios", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("got %d, want 403", rr.Code)
+	}
+	select {
+	case e := <-cap.ch:
+		if e.UserID != "u-88" || e.StatusCode != http.StatusForbidden {
+			t.Fatalf("tentativa negada sem autor: %+v", e)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("nenhuma entrada de auditoria gravada")
+	}
+}
