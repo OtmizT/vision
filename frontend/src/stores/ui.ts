@@ -58,6 +58,22 @@ export const useUiStore = defineStore('ui', () => {
 
   const haFoco = computed(() => foco.value !== null)
 
+  /**
+   * Período que a tela de dados está mostrando.
+   *
+   * Existe aqui, e não dentro do DashboardView, porque o assistente precisa
+   * dele: sem essa referência, "e no mês passado?" não tem a partir de quê, e
+   * a resposta viria sobre o mês corrente do servidor — que pode não ser o que
+   * a pessoa está olhando.
+   *
+   * Não persiste: é onde a pessoa está agora, não preferência dela.
+   */
+  const periodo = ref({ ano: new Date().getFullYear(), mes: new Date().getMonth() + 1 })
+
+  function definirPeriodo(ano: number, mes: number) {
+    periodo.value = { ano, mes }
+  }
+
   function emFoco(id: IdFoco) {
     return foco.value === id
   }
@@ -92,7 +108,7 @@ export const useUiStore = defineStore('ui', () => {
     theme.value = theme.value === 'dark' ? 'light' : 'dark'
   }
 
-  return { theme, filtrosAbertos, mostrarCentavos, foco, haFoco,
-           toggleTheme, toggleFiltros, toggleCentavos,
+  return { theme, filtrosAbertos, mostrarCentavos, foco, haFoco, periodo,
+           toggleTheme, toggleFiltros, toggleCentavos, definirPeriodo,
            emFoco, alternarFoco, sairDoFoco }
 })

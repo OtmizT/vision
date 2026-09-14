@@ -101,7 +101,13 @@ const router = createRouter({
           meta: { roles: ['admin_grupo'] }
         },
 
-        // Omie Config — admin_global apenas
+        // Config IA e Config Omie — admin_global apenas
+        {
+          path: 'ia-config',
+          name: 'IaConfig',
+          component: () => import('@/views/admin/IaConfigView.vue'),
+          meta: { roles: ['admin_global'] }
+        },
         {
           path: 'omie-config',
           name: 'OmieConfig',

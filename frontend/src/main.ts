@@ -21,6 +21,14 @@ import App from './App.vue'
  */
 import '@fontsource-variable/geist'
 
+/*
+ * Registro do Chart.js antes de qualquer componente montar.
+ *
+ * Estava no DashboardView, o que amarrava todo gráfico àquela tela ter sido
+ * importada. O chat do assistente desenha em qualquer rota.
+ */
+import './utils/chart'
+
 import './assets/tokens.css'
 import './assets/main.css'
 

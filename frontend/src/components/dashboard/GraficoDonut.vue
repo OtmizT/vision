@@ -76,6 +76,19 @@ const selecao   = computed(() => new Set(props.selecionados))
 const haSelecao = computed(() => selecao.value.size > 0)
 
 const canvasEl = ref<HTMLCanvasElement | null>(null)
+/*
+ * O `as Chart` no final de cada `new Chart(...)` alarga o tipo na ATRIBUICAO, e
+ * nao na declaracao.
+ *
+ * A classe e invariante nos genericos: uma instancia de `Chart<'doughnut', ...>`
+ * nao e atribuivel a `Chart` (que assume todos os tipos do registro). Anotar a
+ * variavel como `Chart<any>` resolveria a atribuicao, mas o literal de config
+ * perderia o tipo contextual e opcoes especificas — `cutout`, no donut — passariam
+ * a ser recusadas. Alargando so na saida, o objeto de config continua verificado.
+ *
+ * O erro so aparece depois que algum modulo referencia os tipos ricos do Chart.js
+ * (utils/visaospec.ts faz isso); antes o TypeScript tomava um atalho de inferencia.
+ */
 let chart: Chart | null = null
 
 /**
@@ -150,7 +163,7 @@ function desenhar() {
         },
       },
     },
-  })
+  }) as Chart
 }
 
 watch(() => [props.itens, props.selecionados], () => nextTick(desenhar), { deep: true })

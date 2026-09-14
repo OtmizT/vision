@@ -78,7 +78,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import {
   IconGrid, IconBuilding, IconFactory,
-  IconUsers, IconKey, IconSync, IconUser, IconDatabase
+  IconUsers, IconKey, IconSync, IconUser, IconDatabase, IconAssistente
 } from '@/components/ui/icons'
 import { temDashboard, rotuloContexto } from '@/utils/navegacao'
 
@@ -154,6 +154,7 @@ const navSections = computed(() => {
   }
   if (role === 'admin_global') {
     systemItems.push({ to: '/omie-config', label: 'Config Omie', icon: IconKey })
+    systemItems.push({ to: '/ia-config', label: 'Assistente IA', icon: IconAssistente })
   }
   if (role === 'admin_global' || role === 'admin_grupo') {
     systemItems.push({ to: '/sql-explorer', label: 'SQL Explorer', icon: IconDatabase })

@@ -48,6 +48,10 @@
   --shadow-sm: 0 1px 2px rgba(16,15,40,.06);
   --shadow-md: 0 4px 16px rgba(16,15,40,.08);
   --shadow-lg: 0 12px 32px rgba(16,15,40,.12);
+  /* Painel que entra pela borda direita: a sombra precisa vir da lateral, e
+     não de cima como as demais. Mais discreta no tema claro, onde uma sombra
+     forte contra o fundo branco lê como sujeira. */
+  --shadow-lateral: -8px 0 32px rgba(16,15,40,.10);
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -92,6 +96,7 @@
   --shadow-sm: none;
   --shadow-md: 0 8px 24px rgba(0,0,0,.35);
   --shadow-lg: 0 16px 40px rgba(0,0,0,.45);
+  --shadow-lateral: -8px 0 40px rgba(0,0,0,.40);
 }
 
 /* ─────────────────────────────────────────────────────────────────

@@ -626,6 +626,20 @@ const canvasRecDesp    = ref<HTMLCanvasElement | null>(null)
 const canvasAcum       = ref<HTMLCanvasElement | null>(null)
 const canvasSparkRec   = ref<HTMLCanvasElement | null>(null)
 const canvasSparkDesp  = ref<HTMLCanvasElement | null>(null)
+/*
+ * `as Chart` no fim de cada `new Chart(...)`: o alargamento vai na ATRIBUICAO, e
+ * nao na declaracao.
+ *
+ * A classe e invariante nos genericos, entao uma instancia de
+ * `Chart<'bar', ...>` nao e atribuivel a `Chart`. Anotar a variavel como
+ * `Chart<any>` tambem resolveria, mas o literal de config perderia o tipo
+ * contextual e as opcoes especificas do tipo de grafico deixariam de ser
+ * verificadas. Alargando so na saida, o objeto de config continua checado.
+ *
+ * O erro so aparece depois que algum modulo do projeto referencia os tipos ricos
+ * do Chart.js (utils/visaospec.ts faz isso, para converter a spec do
+ * assistente); antes o TypeScript tomava um atalho de inferencia e aceitava.
+ */
 let chartRecDesp:   Chart | null = null
 let chartAcum:      Chart | null = null
 let chartSparkRec:  Chart | null = null
@@ -826,7 +840,7 @@ function buildSpark(
       scales: { x: { display: false }, y: { display: false } },
       layout: { padding: 0 },
     },
-  })
+  }) as Chart
 }
 
 function buildSparklines() {
@@ -1003,7 +1017,7 @@ function buildChartAcum() {
       // ela, o de cima e o de baixo saem cortados na borda do gráfico.
       layout: { padding: { top: 32, bottom: 32 } },
     },
-  })
+  }) as Chart
 }
 
 // Dispara imediatamente com o valor atual de auth.user (immediate: true).

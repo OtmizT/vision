@@ -26,6 +26,13 @@
         </RouterView>
       </div>
     </main>
+
+    <!--
+      O assistente vive aqui, e nao dentro de cada view: ele acompanha a pessoa
+      em todas as telas do dashboard. O componente se teleporta para o body e
+      some sozinho quando o grupo nao tem o recurso habilitado.
+    -->
+    <ChatFlutuante />
   </div>
 </template>
 
@@ -33,6 +40,7 @@
 import { ref } from 'vue'
 import AppSidebar from './AppSidebar.vue'
 import AppTopbar  from './AppTopbar.vue'
+import ChatFlutuante from '@/components/ia/ChatFlutuante.vue'
 import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
